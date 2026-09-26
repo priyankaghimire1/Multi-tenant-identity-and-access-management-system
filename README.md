@@ -6,8 +6,8 @@ A multi-tenant authentication and fine-grained authorization gateway. The archit
 
 ## Key Architectural Decisions
 
-- **Pattern A (Decoupled Orchestration Gateway):** Keycloak operates as a stateless identity and token engine. All multi-tenant domain models, dynamic ReBAC permissions, consent states, and audit trails reside in the application database.
-- **Zero-Cache Dependency:**In-memory LRU stores handle Keycloak JWKS public key caching, while stateful session tracking and sub-millisecond revocations execute directly via indexed PostgreSQL queries.
+- Decoupled Orchestration Gateway: Keycloak operates as a stateless identity and token engine. All multi-tenant domain models, dynamic ReBAC permissions, consent states, and audit trails reside in the application database.
+- Zero-Cache Dependency:In-memory LRU stores handle Keycloak JWKS public key caching, while stateful session tracking and sub-millisecond revocations execute directly via indexed PostgreSQL queries.
 
 
 ---

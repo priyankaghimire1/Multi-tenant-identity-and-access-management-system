@@ -33,9 +33,9 @@ services:
   api:
     build: ./api
     environment:
-      OIDC_ISSUER: http://localhost:8080/realms/demo
-      OIDC_JWKS_URL: http://keycloak:8080/realms/demo/protocol/openid-connect/certs
-      OIDC_AUDIENCE: api-client
+      OIDC_ISSUER: http://localhost:8080/realms/Demo
+      OIDC_JWKS_URL: http://keycloak:8080/realms/Demo/protocol/openid-connect/certs
+      OIDC_AUDIENCE: document-api-client
     ports:
       - "3000:3000"
     depends_on:

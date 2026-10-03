@@ -397,6 +397,7 @@
     "id" : "473c5d27-4e54-4cb0-88a2-6d42dbc14e2e",
     "username" : "alice",
     "firstName" : "Alice",
+    "lastName" : "Quizton",
     "email" : "alice@orga.test",
     "emailVerified" : true,
     "attributes" : {
@@ -422,6 +423,7 @@
     "id" : "d09b1356-d36f-426b-923a-5fef787480e5",
     "username" : "bob",
     "firstName" : "Bob",
+    "lastName" : "Lebsack",
     "email" : "bob@orga.test",
     "emailVerified" : true,
     "attributes" : {
@@ -447,6 +449,7 @@
     "id" : "c509b598-99f3-46b1-bb86-50bbf4b0e094",
     "username" : "carol",
     "firstName" : "Carol",
+    "lastName" : "Lisbon",
     "email" : "carol@orgb.test",
     "emailVerified" : true,
     "attributes" : {
@@ -637,6 +640,7 @@
       "realm_client" : "false",
       "oidc.ciba.grant.enabled" : "false",
       "backchannel.logout.session.required" : "true",
+      "post.logout.redirect.uris" : "+",
       "oauth2.device.authorization.grant.enabled" : "false",
       "backchannel.logout.revoke.offline.tokens" : "false"
     },
@@ -653,8 +657,9 @@
         "included.client.audience" : "documents-api-client",
         "id.token.claim" : "false",
         "lightweight.claim" : "false",
+        "introspection.token.claim" : "true",
         "access.token.claim" : "true",
-        "introspection.token.claim" : "true"
+        "userinfo.token.claim" : "false"
       }
     }, {
       "id" : "ea6601b7-c243-47ac-a8c6-c484b11a0d3f",
@@ -1352,7 +1357,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-user-attribute-mapper", "oidc-usermodel-attribute-mapper", "oidc-address-mapper", "saml-user-property-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-role-list-mapper", "oidc-full-name-mapper", "oidc-usermodel-property-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-user-attribute-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper" ]
       }
     }, {
       "id" : "70b6e2e2-335e-4e82-b456-3e0366b52cb4",
@@ -1395,7 +1400,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-role-list-mapper", "oidc-full-name-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-property-mapper", "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "oidc-usermodel-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "oidc-full-name-mapper", "oidc-usermodel-attribute-mapper", "oidc-address-mapper", "saml-user-attribute-mapper", "oidc-usermodel-property-mapper", "saml-user-property-mapper", "oidc-sha256-pairwise-sub-mapper" ]
       }
     }, {
       "id" : "7c6f8620-7804-4916-9b19-82414df01e20",

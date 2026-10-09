@@ -83,6 +83,8 @@ services:
       FGA_API_KEY: ${OPENFGA_API_KEY}
       FGA_STORE_NAME: multitenant-iam
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/app
+      OIDC_AUDIENCE: gateway-api
+      SEED_DEMO: "true"
     depends_on:
       openfga:
         condition: service_healthy

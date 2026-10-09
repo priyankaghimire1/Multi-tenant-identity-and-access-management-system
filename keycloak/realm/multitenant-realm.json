@@ -43,9 +43,51 @@
             "access.token.claim": "true",
             "userinfo.token.claim": "true"
           }
-        }
+        },
+        {
+  "name": "gateway-api-audience",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-audience-mapper",
+  "config": {
+    "included.custom.audience": "gateway-api",
+    "access.token.claim": "true",
+    "id.token.claim": "false"
+  }
+}
       ]
+    }, {
+  "clientId": "gateway-web",
+  "name": "Gateway web login (Authorization Code + PKCE)",
+  "enabled": true,
+  "publicClient": true,
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "redirectUris": ["http://localhost:4000/*"],
+  "webOrigins": ["http://localhost:4000"],
+  "attributes": { "pkce.code.challenge.method": "S256" },
+  "protocolMappers": [
+    {
+      "name": "tenant_id",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-attribute-mapper",
+      "config": {
+        "user.attribute": "tenant_id", "claim.name": "tenant_id",
+        "jsonType.label": "String",
+        "id.token.claim": "true", "access.token.claim": "true", "userinfo.token.claim": "true"
+      }
+    },
+    {
+      "name": "gateway-api-audience",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-audience-mapper",
+      "config": {
+        "included.custom.audience": "gateway-api",
+        "access.token.claim": "true",
+        "id.token.claim": "false"
+      }
     }
+  ]
+}
   ],
   "users": [
     {
@@ -110,6 +152,13 @@
           "temporary": false
         }
       ]
-    }
+    },
+    {
+  "id": "44444444-4444-4444-8444-444444444444",
+  "username": "dave", "enabled": true, "emailVerified": true,
+  "email": "dave@example.com", "firstName": "Dave", "lastName": "Demo",
+  "attributes": { "tenant_id": ["acme"] },
+  "credentials": [{ "type": "password", "value": "password", "temporary": false }]
+}
   ]
 }

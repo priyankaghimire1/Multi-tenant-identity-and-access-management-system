@@ -4,6 +4,7 @@ COPY gateway/package.json ./
 RUN npm install --omit=dev
 COPY gateway/src ./src
 COPY gateway/scripts ./scripts
+COPY gateway/public ./public
 
 COPY openfga/model.json ./model.json
 USER node

@@ -17,7 +17,7 @@ export async function authenticate(req, res, next) {
   if (!token) return res.status(401).json({ error: 'missing bearer token' });
 
   try {
-    const { payload } = await jwtVerify(token, jwks, { issuer });
+    const { payload } = await jwtVerify(token, jwks, { issuer, audience: process.env.OIDC_AUDIENCE,});
     const tenantId = payload.tenant_id;
     if (!tenantId) return res.status(403).json({ error: 'token has no tenant_id' });
 

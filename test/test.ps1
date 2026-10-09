@@ -63,6 +63,12 @@ Expect "bob can read after share"             200 (Get-Code GET "$GwBase/documen
 Expect "bob (viewer) cannot edit"             403 (Get-Code PUT "$GwBase/documents/$Id" $Bob)
 Expect "carol (other tenant) blocked"         403 (Get-Code GET "$GwBase/documents/$Id" $Carol)
 Expect "garbage token rejected"               401 (Get-Code GET "$GwBase/me" "abc.def.ghi")
+$CarolId = "33333333-3333-4333-8333-333333333333"
+$Dave = Get-Token "dave"
+Expect "carol creates a doc in her own tenant"     201 (Get-Code POST "$GwBase/documents" $Carol "{`"id`":`"$Short`"}")
+Expect "alice cannot read a globex doc"            403 (Get-Code GET "$GwBase/documents/globex-$Short" $Alice)
+Expect "alice cannot share with other-tenant user" 403 (Get-Code POST "$GwBase/documents/$Id/share" $Alice "{`"userId`":`"$CarolId`",`"relation`":`"viewer`"}")
+Expect "user with no tenant membership rejected"   403 (Get-Code GET "$GwBase/me" $Dave)
 
 Write-Host ""
 Write-Host "Passed: $script:Pass   Failed: $script:Fail"

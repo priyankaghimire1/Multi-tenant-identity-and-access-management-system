@@ -4,6 +4,7 @@ import { authenticate, requireDocument } from './auth.js';
 
 const app = express();
 app.use(express.json());
+app.use(express.static('public'));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
@@ -55,5 +56,13 @@ app.use((err, _req, res, _next) => {
 });
 
 await init();
+if (process.env.SEED_DEMO === 'true') {
+  await write([
+    { user: 'user:11111111-1111-4111-8111-111111111111', relation: 'admin',  object: 'tenant:acme' },
+    { user: 'user:22222222-2222-4222-8222-222222222222', relation: 'member', object: 'tenant:acme' },
+    { user: 'user:33333333-3333-4333-8333-333333333333', relation: 'admin',  object: 'tenant:globex' },
+  ]);
+  console.log('[seed] demo tenant memberships written');
+}
 const port = process.env.PORT || 4000;
 app.listen(port, () => console.log(`[gateway] listening on :${port}`));

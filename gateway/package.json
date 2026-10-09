@@ -1,0 +1,14 @@
+{
+  "name": "iam-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "express": "^5.0.1",
+    "jose": "^5.9.6"
+  }
+}

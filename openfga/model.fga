@@ -1,0 +1,19 @@
+model
+  schema 1.1
+
+type user
+
+type tenant
+  relations
+    define admin: [user]
+    define member: [user] or admin
+
+type document
+  relations
+    define parent: [tenant]
+    define owner: [user]
+    define editor: [user] or owner
+    define viewer: [user] or editor or admin from parent
+    define can_view: viewer
+    define can_edit: editor
+    define can_share: owner

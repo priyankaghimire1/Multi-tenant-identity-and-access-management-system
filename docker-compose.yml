@@ -1,97 +1,104 @@
-name: iam
+version: '3.8'
 
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: iam_postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: postgres
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: app_db
     ports:
       - "5432:5432"
+    volumes:
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
-    command: ["start-dev", "--import-realm"]
+    container_name: iam_keycloak
+    command: start-dev --import-realm
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER}
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
-      KC_DB_USERNAME: ${POSTGRES_USER}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      KC_HOSTNAME: http://localhost:8080
-      KC_HTTP_ENABLED: "true"
-    volumes:
-      - ./keycloak/realm:/opt/keycloak/data/import:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: adminpassword
+      KC_HTTP_PORT: 8081
     ports:
-      - "8080:8080"
-
-  openfga-migrate:
-    image: openfga/openfga:v1.8.4
-    command: migrate
-    environment:
-      OPENFGA_DATASTORE_ENGINE: postgres
-      OPENFGA_DATASTORE_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/openfga?sslmode=disable
+      - "8081:8081"
+    volumes:
+      - ./keycloak/realm/multitenant-realm.json:/opt/keycloak/data/import/multitenant-realm.json:ro
     depends_on:
       postgres:
         condition: service_healthy
-    restart: "no"
 
   openfga:
-    image: openfga/openfga:v1.8.4
+    image: openfga/openfga:latest
+    container_name: iam_openfga
     command: run
     environment:
-      OPENFGA_DATASTORE_ENGINE: postgres
-      OPENFGA_DATASTORE_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/openfga?sslmode=disable
-      OPENFGA_AUTHN_METHOD: preshared
-      OPENFGA_AUTHN_PRESHARED_KEYS: ${OPENFGA_API_KEY}
+      OPENFGA_DATASTORE_ENGINE: memory
       OPENFGA_PLAYGROUND_ENABLED: "true"
-      OPENFGA_LOG_FORMAT: json
-    depends_on:
-      openfga-migrate:
-        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+      - "3001:3000"
     healthcheck:
-      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=openfga:8081"]
+      test: ["CMD", "/usr/local/bin/openfga", "healthz"]
       interval: 5s
       timeout: 5s
-      retries: 10
-    ports:
-      - "8081:8080"   
-      - "3000:3000"   
+      retries: 5
 
-  gateway:
-    build:
-      context: .
-      dockerfile: gateway/Dockerfile
+  openfga-init:
+    image: openfga/cli:latest
+    container_name: iam_openfga_init
+    volumes:
+      - ./openfga/model.fga:/model.fga:ro
     environment:
-      PORT: 4000
-      OIDC_ISSUER: http://localhost:8080/realms/multitenant
-      OIDC_JWKS_URI: http://keycloak:8080/realms/multitenant/protocol/openid-connect/certs
       FGA_API_URL: http://openfga:8080
-      FGA_API_KEY: ${OPENFGA_API_KEY}
-      FGA_STORE_NAME: multitenant-iam
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/app
-      OIDC_AUDIENCE: gateway-api
-      SEED_DEMO: "true"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for OpenFGA server to be healthy..."
+        sleep 3
+        echo "Creating default multi-tenant OpenFGA store..."
+        STORE_OUTPUT=$$(fga store create --name "multitenant-iam")
+        echo "$$STORE_OUTPUT"
+        STORE_ID=$$(echo "$$STORE_OUTPUT" | grep -o '01[A-Z0-9]*' | head -n 1)
+        if [ -n "$$STORE_ID" ]; then
+          echo "Writing authorization model from /model.fga into store $$STORE_ID..."
+          fga model write --store-id "$$STORE_ID" --file /model.fga
+        fi
     depends_on:
       openfga:
         condition: service_healthy
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: iam_gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/app_db
+      KEYCLOAK_URL: http://keycloak:8081
+      KEYCLOAK_REALM: dat
+      FGA_API_URL: http://openfga:8080
+      FGA_STORE_ID: ${FGA_STORE_ID:-}
+      FGA_MODEL_ID: ${FGA_MODEL_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
       keycloak:
         condition: service_started
-    ports:
-      - "4000:4000"
+      openfga:
+        condition: service_healthy
 
 volumes:
   pgdata:

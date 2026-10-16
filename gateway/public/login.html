@@ -1,30 +1,101 @@
-<!doctype html>
-<meta charset="utf-8"><title>PKCE login</title>
-<button id="login">Log in with Keycloak</button>
-<pre id="out"></pre>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi-Tenant IAM Sign-In</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #0f172a; color: #fff; }
+    .card { background: #1e293b; padding: 2rem; border-radius: 8px; width: 360px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    button { width: 100%; padding: 0.75rem; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    button:hover { background: #2563eb; }
+    pre { background: #000; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>PKCE Authentication</h2>
+  <p>Multi-Tenant Identity Platform</p>
+  <button id="loginBtn">Sign in with Keycloak</button>
+  <div id="output" style="margin-top: 1rem;"></div>
+</div>
+
 <script>
-const KC = 'http://localhost:8080/realms/multitenant/protocol/openid-connect';
-const CLIENT = 'gateway-web', REDIRECT = location.origin + '/login.html';
-const b64 = b => btoa(String.fromCharCode(...new Uint8Array(b)))
-  .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const KEYCLOAK_URL = 'http://localhost:8081';
+  const REALM = 'dat';
+  const CLIENT_ID = 'web-app';
+  const REDIRECT_URI = window.location.origin + '/login.html';
 
-login.onclick = async () => {
-  const verifier = b64(crypto.getRandomValues(new Uint8Array(32)));
-  const challenge = b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
-  sessionStorage.setItem('v', verifier);
-  location = KC + '/auth?' + new URLSearchParams({
-    client_id: CLIENT, redirect_uri: REDIRECT, response_type: 'code', scope: 'openid',
-    code_challenge: challenge, code_challenge_method: 'S256' });
-};
+  function generateRandomString(length) {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    let result = '';
+    const values = crypto.getRandomValues(new Uint8Array(length));
+    for (let i = 0; i < length; i++) {
+      result += charset[values[i] % charset.length];
+    }
+    return result;
+  }
 
-const code = new URLSearchParams(location.search).get('code');
-if (code) (async () => {
-  const r = await fetch(KC + '/token', { method: 'POST', body: new URLSearchParams({
-    grant_type: 'authorization_code', client_id: CLIENT, code,
-    redirect_uri: REDIRECT, code_verifier: sessionStorage.getItem('v') }) });
-  const t = await r.json();
-  out.textContent = JSON.stringify(t.access_token
-    ? await (await fetch('/me', { headers: { Authorization: 'Bearer ' + t.access_token } })).json()
-    : t, null, 2);
-})();
+  async function sha256(plain) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(plain);
+    return crypto.subtle.digest('SHA-256', data);
+  }
+
+  function base64UrlEncode(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const codeVerifier = generateRandomString(64);
+    sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+
+    const hashed = await sha256(codeVerifier);
+    const codeChallenge = base64UrlEncode(hashed);
+
+    const authUrl = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/auth` +
+      `?client_id=${encodeURIComponent(CLIENT_ID)}` +
+      `&response_type=code` +
+      `&scope=openid%20profile%20email` +
+      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+      `&code_challenge=${codeChallenge}` +
+      `&code_challenge_method=S256`;
+
+    window.location.href = authUrl;
+  });
+
+  async function handleCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const verifier = sessionStorage.getItem('pkce_code_verifier');
+
+    if (code && verifier) {
+      document.getElementById('output').innerHTML = 'Exchanging authorization code...';
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: CLIENT_ID,
+        code_verifier: verifier,
+        code: code,
+        redirect_uri: REDIRECT_URI
+      });
+
+      const res = await fetch(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+      });
+
+      const data = await res.json();
+      document.getElementById('output').innerHTML = `<p>Authenticated!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
+  handleCallback();
 </script>
+</body>
+</html>

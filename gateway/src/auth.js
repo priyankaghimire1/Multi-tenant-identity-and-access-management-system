@@ -1,51 +1,81 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { check } from './fga.js';
+const { createRemoteJWKSet, jwtVerify } = require('jose');
+const { pool, checkPermission } = require('./fga');
+require('dotenv').config();
 
-const issuer = process.env.OIDC_ISSUER;
-// jose caches the key set in memory and refreshes it when it sees an unknown "kid"
-const jwks = createRemoteJWKSet(new URL(process.env.OIDC_JWKS_URI));
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8081';
+const REALM = process.env.KEYCLOAK_REALM || 'dat';
+const JWKS = createRemoteJWKSet(
+  new URL(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/certs`)
+);
 
 /**
- * 1. Verifies the Keycloak access token (signature, expiry, issuer).
- * 2. Reads the user id (sub) and tenant (tenant_id claim).
- * 3. Asks OpenFGA whether this user is actually a member of that tenant,
- *    so a forged or stale claim alone never grants tenant access.
+ * Authentication Middleware:
+ * - Validates RS256 signature against Keycloak JWKS
+ * - Checks against revoked sessions table in DB
  */
-export async function authenticate(req, res, next) {
-  const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return res.status(401).json({ error: 'missing bearer token' });
+async function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or malformed Authorization header' });
+  }
+
+  const token = authHeader.split(' ')[1];
 
   try {
-    const { payload } = await jwtVerify(token, jwks, { issuer, audience: process.env.OIDC_AUDIENCE,});
-    const tenantId = payload.tenant_id;
-    if (!tenantId) return res.status(403).json({ error: 'token has no tenant_id' });
+    const { payload } = await jwtVerify(token, JWKS);
+    req.user = payload;
 
-    const user = `user:${payload.sub}`;
-    const isMember = await check(user, 'member', `tenant:${tenantId}`);
-    if (!isMember) {
-      return res.status(403).json({ error: `not a member of tenant ${tenantId}` });
+    // Stateful revocation check
+    if (payload.sid) {
+      const { rows } = await pool.query(
+        'SELECT 1 FROM revoked_sessions WHERE session_id = $1 LIMIT 1',
+        [payload.sid]
+      );
+      if (rows.length > 0) {
+        return res.status(401).json({ error: 'Session has been revoked' });
+      }
     }
 
-    req.auth = {
-      sub: payload.sub,
-      fgaUser: user,
-      username: payload.preferred_username,
-      tenantId,
-    };
     next();
-  } catch (e) {
-    console.error('[auth]', e.message);
-    res.status(401).json({ error: 'invalid token', detail: e.message });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token', details: err.message });
   }
 }
 
-/** Route guard: require an OpenFGA relation on `:id` documents. */
-export function requireDocument(relation) {
+/**
+ * ReBAC Authorization Middleware Factory
+ */
+function requirePermission(relation, getObjectId) {
   return async (req, res, next) => {
-    const object = `document:${req.params.id}`;
-    const allowed = await check(req.auth.fgaUser, relation, object);
-    if (!allowed) return res.status(403).json({ error: `requires ${relation} on ${object}` });
+    const objectId = typeof getObjectId === 'function' ? getObjectId(req) : getObjectId;
+    const userSub = req.user.sub;
+    const orgId = req.headers['x-tenant-id'] || null;
+
+    const allowed = await checkPermission(userSub, relation, objectId);
+
+    // Append-only audit record
+    await pool.query(
+      `INSERT INTO audit_logs (user_sub, org_id, action, resource, decision, context)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        userSub,
+        orgId,
+        relation,
+        objectId,
+        allowed ? 'ALLOW' : 'DENY',
+        JSON.stringify({ ip: req.ip, method: req.method, path: req.originalUrl })
+      ]
+    );
+
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: Relationship check denied access' });
+    }
+
     next();
   };
 }
+
+module.exports = {
+  requireAuth,
+  requirePermission
+};

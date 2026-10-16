@@ -1,12 +1,14 @@
-FROM node:22-alpine
-WORKDIR /app
-COPY gateway/package.json ./
-RUN npm install --omit=dev
-COPY gateway/src ./src
-COPY gateway/scripts ./scripts
-COPY gateway/public ./public
+FROM node:20-alpine
 
-COPY openfga/model.json ./model.json
-USER node
-EXPOSE 4000
+WORKDIR /app
+
+# Install dependencies first for Docker layer caching
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy application source code
+COPY . .
+
+EXPOSE 3000
+
 CMD ["node", "src/index.js"]

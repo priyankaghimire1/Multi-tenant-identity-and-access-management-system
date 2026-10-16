@@ -1,64 +1,231 @@
 {
   "schema_version": "1.1",
   "type_definitions": [
-    { "type": "user" },
     {
-      "type": "tenant",
-      "relations": {
-        "admin": { "this": {} },
-        "member": {
-          "union": {
-            "child": [
-              { "this": {} },
-              { "computedUserset": { "relation": "admin" } }
-            ]
-          }
-        }
-      },
-      "metadata": {
-        "relations": {
-          "admin": { "directly_related_user_types": [{ "type": "user" }] },
-          "member": { "directly_related_user_types": [{ "type": "user" }] }
-        }
-      }
+      "type": "user",
+      "relations": {},
+      "metadata": null
     },
     {
-      "type": "document",
+      "type": "organization",
       "relations": {
-        "parent": { "this": {} },
-        "owner": { "this": {} },
-        "editor": {
-          "union": {
-            "child": [
-              { "this": {} },
-              { "computedUserset": { "relation": "owner" } }
-            ]
+        "admin": {
+          "this": {}
+        },
+        "instructor": {
+          "this": {}
+        },
+        "learner": {
+          "this": {}
+        },
+        "suspended": {
+          "this": {}
+        },
+        "tenant_active": {
+          "this": {}
+        },
+        "live_admin": {
+          "difference": {
+            "base": {
+              "computedUserset": {
+                "relation": "admin"
+              }
+            },
+            "subtract": {
+              "computedUserset": {
+                "relation": "suspended"
+              }
+            }
           }
         },
-        "viewer": {
-          "union": {
-            "child": [
-              { "this": {} },
-              { "computedUserset": { "relation": "editor" } },
+        "live_instructor": {
+          "difference": {
+            "base": {
+              "computedUserset": {
+                "relation": "instructor"
+              }
+            },
+            "subtract": {
+              "computedUserset": {
+                "relation": "suspended"
+              }
+            }
+          }
+        },
+        "live_learner": {
+          "difference": {
+            "base": {
+              "computedUserset": {
+                "relation": "learner"
+              }
+            },
+            "subtract": {
+              "computedUserset": {
+                "relation": "suspended"
+              }
+            }
+          }
+        },
+        "org_admin": {
+          "intersection": {
+            "children": [
               {
-                "tupleToUserset": {
-                  "tupleset": { "relation": "parent" },
-                  "computedUserset": { "relation": "admin" }
+                "computedUserset": {
+                  "relation": "live_admin"
+                }
+              },
+              {
+                "computedUserset": {
+                  "relation": "tenant_active"
                 }
               }
             ]
           }
         },
-        "can_view": { "computedUserset": { "relation": "viewer" } },
-        "can_edit": { "computedUserset": { "relation": "editor" } },
-        "can_share": { "computedUserset": { "relation": "owner" } }
+        "org_instructor": {
+          "intersection": {
+            "children": [
+              {
+                "computedUserset": {
+                  "relation": "live_instructor"
+                }
+              },
+              {
+                "computedUserset": {
+                  "relation": "tenant_active"
+                }
+              }
+            ]
+          }
+        },
+        "org_learner": {
+          "intersection": {
+            "children": [
+              {
+                "computedUserset": {
+                  "relation": "live_learner"
+                }
+              },
+              {
+                "computedUserset": {
+                  "relation": "tenant_active"
+                }
+              }
+            ]
+          }
+        },
+        "org_member": {
+          "union": {
+            "children": [
+              {
+                "computedUserset": {
+                  "relation": "org_admin"
+                }
+              },
+              {
+                "computedUserset": {
+                  "relation": "org_instructor"
+                }
+              },
+              {
+                "computedUserset": {
+                  "relation": "org_learner"
+                }
+              }
+            ]
+          }
+        }
       },
       "metadata": {
         "relations": {
-          "parent": { "directly_related_user_types": [{ "type": "tenant" }] },
-          "owner": { "directly_related_user_types": [{ "type": "user" }] },
-          "editor": { "directly_related_user_types": [{ "type": "user" }] },
-          "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+          "admin": {
+            "directly_related_user_types": [
+              { "type": "user" }
+            ]
+          },
+          "instructor": {
+            "directly_related_user_types": [
+              { "type": "user" }
+            ]
+          },
+          "learner": {
+            "directly_related_user_types": [
+              { "type": "user" }
+            ]
+          },
+          "suspended": {
+            "directly_related_user_types": [
+              { "type": "user" }
+            ]
+          },
+          "tenant_active": {
+            "directly_related_user_types": [
+              { "type": "user", "wildcard": {} }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "course",
+      "relations": {
+        "org": {
+          "this": {}
+        },
+        "can_view": {
+          "tupleToUserset": {
+            "tupleset": {
+              "relation": "org"
+            },
+            "computedUserset": {
+              "relation": "org_member"
+            }
+          }
+        },
+        "can_edit": {
+          "union": {
+            "children": [
+              {
+                "tupleToUserset": {
+                  "tupleset": {
+                    "relation": "org"
+                  },
+                  "computedUserset": {
+                    "relation": "org_instructor"
+                  }
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {
+                    "relation": "org"
+                  },
+                  "computedUserset": {
+                    "relation": "org_admin"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "can_delete": {
+          "tupleToUserset": {
+            "tupleset": {
+              "relation": "org"
+            },
+            "computedUserset": {
+              "relation": "org_admin"
+            }
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "org": {
+            "directly_related_user_types": [
+              { "type": "organization" }
+            ]
+          }
         }
       }
     }

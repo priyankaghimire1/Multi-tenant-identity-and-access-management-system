@@ -3,17 +3,24 @@ model
 
 type user
 
-type tenant
+type organization
   relations
     define admin: [user]
-    define member: [user] or admin
+    define instructor: [user]
+    define learner: [user]
+    define suspended: [user]
+    define tenant_active: [user:*]
+    define live_admin: admin but not suspended
+    define live_instructor: instructor but not suspended
+    define live_learner: learner but not suspended
+    define org_admin: live_admin and tenant_active
+    define org_instructor: live_instructor and tenant_active
+    define org_learner: live_learner and tenant_active
+    define org_member: org_admin or org_instructor or org_learner
 
-type document
+type course
   relations
-    define parent: [tenant]
-    define owner: [user]
-    define editor: [user] or owner
-    define viewer: [user] or editor or admin from parent
-    define can_view: viewer
-    define can_edit: editor
-    define can_share: owner
+    define org: [organization]
+    define can_view: org_member from org
+    define can_edit: org_instructor from org or org_admin from org
+    define can_delete: org_admin from org

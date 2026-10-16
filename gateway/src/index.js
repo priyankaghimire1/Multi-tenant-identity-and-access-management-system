@@ -1,68 +1,199 @@
-import express from 'express';
-import { init, check, write } from './fga.js';
-import { authenticate, requireDocument } from './auth.js';
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const { pool } = require('./fga');
+const { requireAuth, requirePermission } = require('./auth');
+require('dotenv').config();
 
 const app = express();
+app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../public')));
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
-
-// Who am I? (proves the Keycloak token + OpenFGA tenant membership both work)
-app.get('/me', authenticate, (req, res) => {
-  res.json({ sub: req.auth.sub, username: req.auth.username, tenant: req.auth.tenantId });
-});
-
-// Create a document in the caller's tenant. Caller becomes the owner.
-app.post('/documents', authenticate, async (req, res) => {
-  const { id } = req.body || {};
-  if (!id || !/^[\w-]+$/.test(id)) return res.status(400).json({ error: 'id required (letters, digits, - _)' });
-
-  // Namespacing by tenant avoids id collisions between tenants
-  const docId = `${req.auth.tenantId}-${id}`;
-  await write([
-    { user: `tenant:${req.auth.tenantId}`, relation: 'parent', object: `document:${docId}` },
-    { user: req.auth.fgaUser, relation: 'owner', object: `document:${docId}` },
-  ]);
-  res.status(201).json({ id: docId });
-});
-
-app.get('/documents/:id', authenticate, requireDocument('can_view'), (req, res) => {
-  res.json({ id: req.params.id, content: 'secret document body', viewer: req.auth.username });
-});
-
-app.put('/documents/:id', authenticate, requireDocument('can_edit'), (req, res) => {
-  res.json({ id: req.params.id, updated: true, by: req.auth.username });
-});
-
-// Share a document with another user (owner only). Body: { "userId": "<keycloak sub>", "relation": "viewer" | "editor" }
-app.post('/documents/:id/share', authenticate, requireDocument('can_share'), async (req, res) => {
-  const { userId, relation } = req.body || {};
-  if (!userId || !['viewer', 'editor'].includes(relation)) {
-    return res.status(400).json({ error: 'userId and relation (viewer|editor) required' });
+// ----------------------------------------------------
+// M1 & M5: Organization Provisioning & Suspension
+// ----------------------------------------------------
+app.post('/api/orgs', requireAuth, async (req, res) => {
+  const { org_id, name, domain } = req.body;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      'INSERT INTO organizations (id, name, domain, is_active) VALUES ($1, $2, $3, TRUE)',
+      [org_id, name, domain]
+    );
+    // Write outbox event to enable the wildcard tenant_active relation
+    await client.query(
+      `INSERT INTO outbox_events (event_type, payload) VALUES ($1, $2)`,
+      ['TENANT_PROVISIONED', { action: 'WRITE', user: 'user:*', relation: 'tenant_active', object: org_id }]
+    );
+    await client.query('COMMIT');
+    res.status(201).json({ message: 'Tenant organization registered', org_id });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
-  // Only allow sharing with members of the same tenant
-  const sameTenant = await check(`user:${userId}`, 'member', `tenant:${req.auth.tenantId}`);
-  if (!sameTenant) return res.status(403).json({ error: 'target user is not in your tenant' });
-
-  await write([{ user: `user:${userId}`, relation, object: `document:${req.params.id}` }]);
-  res.json({ shared: true });
 });
 
-// Express 5 forwards rejected async handlers here
-app.use((err, _req, res, _next) => {
-  console.error(err);
-  res.status(500).json({ error: 'internal error' });
+// Instant tenant-wide kill switch: removes wildcard tenant_active
+app.patch('/api/orgs/:org_id/suspend', requireAuth, async (req, res) => {
+  const { org_id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE organizations SET is_active = FALSE WHERE id = $1', [org_id]);
+    await client.query(
+      `INSERT INTO outbox_events (event_type, payload) VALUES ($1, $2)`,
+      ['TENANT_SUSPENDED', { action: 'DELETE', user: 'user:*', relation: 'tenant_active', object: org_id }]
+    );
+    await client.query('COMMIT');
+    res.json({ message: `Tenant ${org_id} suspended across platform` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
 });
 
-await init();
-if (process.env.SEED_DEMO === 'true') {
-  await write([
-    { user: 'user:11111111-1111-4111-8111-111111111111', relation: 'admin',  object: 'tenant:acme' },
-    { user: 'user:22222222-2222-4222-8222-222222222222', relation: 'member', object: 'tenant:acme' },
-    { user: 'user:33333333-3333-4333-8333-333333333333', relation: 'admin',  object: 'tenant:globex' },
-  ]);
-  console.log('[seed] demo tenant memberships written');
-}
-const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`[gateway] listening on :${port}`));
+// ----------------------------------------------------
+// M4: Role Management & User Suspension
+// ----------------------------------------------------
+app.post('/api/orgs/:org_id/memberships', requireAuth, async (req, res) => {
+  const { org_id } = req.params;
+  const { user_sub, role } = req.body; // 'admin', 'instructor', 'learner'
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      'INSERT INTO tenant_memberships (user_sub, org_id, role) VALUES ($1, $2, $3)',
+      [user_sub, org_id, role]
+    );
+    await client.query(
+      `INSERT INTO outbox_events (event_type, payload) VALUES ($1, $2)`,
+      ['MEMBERSHIP_ASSIGNED', { action: 'WRITE', user: `user:${user_sub}`, relation: role, object: org_id }]
+    );
+    await client.query('COMMIT');
+    res.status(201).json({ message: `Role ${role} granted to ${user_sub}` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+app.patch('/api/orgs/:org_id/members/:user_sub/suspend', requireAuth, async (req, res) => {
+  const { org_id, user_sub } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      'UPDATE tenant_memberships SET is_suspended = TRUE WHERE user_sub = $1 AND org_id = $2',
+      [user_sub, org_id]
+    );
+    await client.query(
+      `INSERT INTO outbox_events (event_type, payload) VALUES ($1, $2)`,
+      ['USER_SUSPENDED', { action: 'WRITE', user: `user:${user_sub}`, relation: 'suspended', object: org_id }]
+    );
+    await client.query('COMMIT');
+    res.json({ message: `User ${user_sub} suspended in ${org_id}` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ----------------------------------------------------
+// Domain Resource APIs (Courses protected by OpenFGA ReBAC)
+// ----------------------------------------------------
+app.post('/api/courses',
+  requireAuth,
+  requirePermission('org_admin', (req) => req.body.org_id),
+  async (req, res) => {
+    const { course_id, org_id, title, description } = req.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        'INSERT INTO courses (id, org_id, title, description) VALUES ($1, $2, $3, $4)',
+        [course_id, org_id, title, description]
+      );
+      // Link course to organization in OpenFGA
+      await client.query(
+        `INSERT INTO outbox_events (event_type, payload) VALUES ($1, $2)`,
+        ['COURSE_CREATED', { action: 'WRITE', user: org_id, relation: 'org', object: course_id }]
+      );
+      await client.query('COMMIT');
+      res.status(201).json({ message: 'Course created', course_id });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      res.status(500).json({ error: err.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+app.get('/api/courses/:course_id',
+  requireAuth,
+  requirePermission('can_view', (req) => req.params.course_id),
+  async (req, res) => {
+    const { course_id } = req.params;
+    const { rows } = await pool.query('SELECT * FROM courses WHERE id = $1', [course_id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+    res.json(rows[0]);
+  }
+);
+
+// ----------------------------------------------------
+// M3: Session Revocation
+// ----------------------------------------------------
+app.post('/api/auth/revoke-session', requireAuth, async (req, res) => {
+  const { sid, sub, exp } = req.user;
+  if (!sid) {
+    return res.status(400).json({ error: 'Token missing session identifier' });
+  }
+
+  const expiresAt = exp ? new Date(exp * 1000) : new Date(Date.now() + 3600000);
+  try {
+    await pool.query(
+      `INSERT INTO revoked_sessions (user_sub, session_id, expires_at)
+       VALUES ($1, $2, $3) ON CONFLICT (session_id) DO NOTHING`,
+      [sub, sid, expiresAt]
+    );
+    res.json({ message: 'Session invalidated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// M6: Audit Export API
+// ----------------------------------------------------
+app.get('/api/audit-logs/export', requireAuth, async (req, res) => {
+  const format = req.query.format || 'json';
+  const { rows } = await pool.query('SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 500');
+
+  if (format === 'csv') {
+    const headers = 'id,timestamp,user_sub,org_id,action,resource,decision\n';
+    const lines = rows
+      .map(r => `"${r.id}","${r.timestamp.toISOString()}","${r.user_sub}","${r.org_id || ''}","${r.action}","${r.resource}","${r.decision}"`)
+      .join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="audit_logs.csv"');
+    return res.send(headers + lines);
+  }
+
+  res.json(rows);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`API Gateway running on port ${PORT}`);
+});

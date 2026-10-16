@@ -1,106 +1,67 @@
-import { readFile } from 'node:fs/promises';
+const { OpenFgaClient } = require('@openfga/sdk');
+const { Pool } = require('pg');
+require('dotenv').config();
 
-const API_URL = process.env.FGA_API_URL;
-const API_KEY = process.env.FGA_API_KEY;
-const STORE_NAME = process.env.FGA_STORE_NAME || 'multitenant-iam';
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
-let storeId = null;
-let modelId = null;
+const fgaClient = new OpenFgaClient({
+  apiUrl: process.env.FGA_API_URL || 'http://localhost:8080',
+  storeId: process.env.FGA_STORE_ID,
+  authorizationModelId: process.env.FGA_MODEL_ID
+});
 
-async function call(method, path, body) {
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${API_KEY}`,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const text = await res.text();
-  const json = text ? JSON.parse(text) : {};
-  if (!res.ok) {
-    const err = new Error(`OpenFGA ${method} ${path} -> ${res.status} ${text}`);
-    err.status = res.status;
-    err.body = json;
-    throw err;
-  }
-  return json;
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-/** Find-or-create the store and make sure an authorization model exists. */
-export async function init() {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      const { stores } = await call('GET', '/stores');
-      let store = stores.find((s) => s.name === STORE_NAME);
-      if (!store) store = await call('POST', '/stores', { name: STORE_NAME });
-      storeId = store.id;
-      break;
-    } catch (e) {
-      if (attempt >= 20) throw e;
-      console.log(`[fga] waiting for OpenFGA (${attempt}): ${e.message}`);
-      await sleep(2000);
-    }
-  }
-
-  const latest = await call(
-    'GET',
-    `/stores/${storeId}/authorization-models?page_size=1`,
-  );
-  if (latest.authorization_models?.length) {
-    modelId = latest.authorization_models[0].id;
-    console.log(`[fga] using existing model ${modelId}`);
-  } else {
-    const model = JSON.parse(
-      await readFile(new URL('../model.json', import.meta.url), 'utf8'),
-    );
-    const created = await call(
-      'POST',
-      `/stores/${storeId}/authorization-models`,
-      model,
-    );
-    modelId = created.authorization_model_id;
-    console.log(`[fga] created model ${modelId}`);
-  }
-  console.log(`[fga] store ${storeId} ready`);
-}
-
-/** Replace the model with the contents of model.json (used after you edit it). */
-export async function pushModel() {
-  const model = JSON.parse(
-    await readFile(new URL('../model.json', import.meta.url), 'utf8'),
-  );
-  const created = await call(
-    'POST',
-    `/stores/${storeId}/authorization-models`,
-    model,
-  );
-  modelId = created.authorization_model_id;
-  return modelId;
-}
-
-export async function check(user, relation, object) {
-  const res = await call('POST', `/stores/${storeId}/check`, {
-    authorization_model_id: modelId,
-    tuple_key: { user, relation, object },
-  });
-  return res.allowed === true;
-}
-
-export async function write(tuples) {
+/**
+ * Checks ReBAC permissions in OpenFGA
+ */
+async function checkPermission(userSub, relation, objectId) {
   try {
-    await call('POST', `/stores/${storeId}/write`, {
-      authorization_model_id: modelId,
-      writes: { tuple_keys: tuples },
+    const { allowed } = await fgaClient.check({
+      user: `user:${userSub}`,
+      relation: relation,
+      object: objectId
     });
-  } catch (e) {
-    // Writing a tuple that already exists is fine (seed is re-runnable)
-    if (e.body?.code === 'write_failed_due_to_invalid_input' &&
-        /already exist/i.test(e.body?.message || '')) return;
-    throw e;
+    return !!allowed;
+  } catch (error) {
+    console.error('OpenFGA Check Error:', error);
+    return false;
   }
 }
 
-export const getStoreId = () => storeId;
+/**
+ * Background worker to consume transactional outbox events and mirror them to OpenFGA
+ */
+async function processOutboxQueue() {
+  const client = await pool.connect();
+  try {
+    const { rows: events } = await client.query(
+      'SELECT id, payload FROM outbox_events WHERE processed = FALSE ORDER BY created_at ASC LIMIT 25 FOR UPDATE SKIP LOCKED'
+    );
+
+    for (const event of events) {
+      const { action, user, relation, object } = event.payload;
+
+      if (action === 'WRITE') {
+        await fgaClient.writeTuples([{ user, relation, object }]);
+      } else if (action === 'DELETE') {
+        await fgaClient.deleteTuples([{ user, relation, object }]);
+      }
+
+      await client.query('UPDATE outbox_events SET processed = TRUE WHERE id = $1', [event.id]);
+    }
+  } catch (err) {
+    console.error('Outbox sync worker error:', err);
+  } finally {
+    client.release();
+  }
+}
+
+// Poll outbox every 1 second
+setInterval(processOutboxQueue, 1000);
+
+module.exports = {
+  fgaClient,
+  checkPermission,
+  pool
+};

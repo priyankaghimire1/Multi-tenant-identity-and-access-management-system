@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -46,36 +44,24 @@ services:
     ports:
       - "8080:8080"
       - "3001:3000"
-    healthcheck:
-      test: ["CMD", "/usr/local/bin/openfga", "healthz"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   openfga-init:
-    image: openfga/cli:latest
+    image: alpine:3.20
     container_name: iam_openfga_init
     volumes:
-      - ./openfga/model.fga:/model.fga:ro
-    environment:
-      FGA_API_URL: http://openfga:8080
+      - ./openfga/model.json:/model.json:ro
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        echo "Waiting for OpenFGA server to be healthy..."
-        sleep 3
-        echo "Creating default multi-tenant OpenFGA store..."
-        STORE_OUTPUT=$$(fga store create --name "multitenant-iam")
-        echo "$$STORE_OUTPUT"
-        STORE_ID=$$(echo "$$STORE_OUTPUT" | grep -o '01[A-Z0-9]*' | head -n 1)
-        if [ -n "$$STORE_ID" ]; then
-          echo "Writing authorization model from /model.fga into store $$STORE_ID..."
-          fga model write --store-id "$$STORE_ID" --file /model.fga
-        fi
+        apk add --no-cache curl jq >/dev/null
+        until curl -sf http://openfga:8080/healthz >/dev/null; do sleep 1; done
+        STORE_ID=$$(curl -s -X POST http://openfga:8080/stores -H 'content-type: application/json' -d '{"name":"multitenant-iam"}' | jq -r .id)
+        MODEL_ID=$$(curl -s -X POST http://openfga:8080/stores/$$STORE_ID/authorization-models -H 'content-type: application/json' --data @/model.json | jq -r .authorization_model_id)
+        echo "FGA_STORE_ID=$$STORE_ID"
+        echo "FGA_MODEL_ID=$$MODEL_ID"
     depends_on:
       openfga:
-        condition: service_healthy
-
+        condition: service_started
   gateway:
     build:
       context: ./gateway
@@ -98,7 +84,7 @@ services:
       keycloak:
         condition: service_started
       openfga:
-        condition: service_healthy
+        condition: service_started
 
 volumes:
   pgdata:

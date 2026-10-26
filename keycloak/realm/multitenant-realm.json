@@ -46,5 +46,59 @@
         "description": "Standard Tenant Member"
       }
     ]
-  }
+  },
+  "users": [
+    {
+      "id": "alice-sub-123",
+      "username": "alice",
+      "email": "alice@acme.edu",
+      "firstName": "Alice",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["tenant-admin"]
+    },
+    {
+      "id": "bob-sub-456",
+      "username": "bob",
+      "email": "bob@acme.edu",
+      "firstName": "Bob",
+      "lastName": "Learner",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["tenant-user"]
+    },
+    {
+      "id": "carol-sub-789",
+      "username": "carol",
+      "email": "carol@acme.edu",
+      "firstName": "Carol",
+      "lastName": "Member",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["tenant-user"]
+    },
+    {
+      "id": "dave-sub-012",
+      "username": "dave",
+      "email": "dave@globex.com",
+      "firstName": "Dave",
+      "lastName": "Outsider",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["tenant-user"]
+    }
+  ]
 }

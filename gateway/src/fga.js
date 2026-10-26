@@ -15,11 +15,11 @@ const fgaClient = new OpenFgaClient({
 /**
  * Checks ReBAC permissions in OpenFGA
  */
-async function checkPermission(userSub, relation, objectId) {
+async function checkRelation(user, relation, objectId) {
   try {
     const { allowed } = await fgaClient.check({
-      user: `user:${userSub}`,
-      relation: relation,
+      user,
+      relation,
       object: objectId
     });
     return !!allowed;
@@ -27,6 +27,10 @@ async function checkPermission(userSub, relation, objectId) {
     console.error('OpenFGA Check Error:', error);
     return false;
   }
+}
+
+async function checkPermission(userSub, relation, objectId) {
+  return checkRelation(`user:${userSub}`, relation, objectId);
 }
 
 /**
@@ -63,5 +67,6 @@ setInterval(processOutboxQueue, 1000);
 module.exports = {
   fgaClient,
   checkPermission,
+  checkRelation,
   pool
 };

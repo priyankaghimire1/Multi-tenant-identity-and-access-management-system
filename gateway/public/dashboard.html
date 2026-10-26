@@ -1,0 +1,1009 @@
+<!-- gateway/public/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IAM Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --input-bg: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    header { background-color: var(--card-bg); border-bottom: 1px solid var(--card-border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .header-left { display: flex; align-items: center; gap: 1.5rem; }
+    .header-right { display: flex; align-items: center; gap: 1rem; }
+    select, input, button { background: var(--input-bg); color: var(--text); border: 1px solid var(--card-border); padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.875rem; }
+    button { cursor: pointer; transition: background 0.15s ease; background-color: #334155; }
+    button:hover { background-color: #475569; }
+    button.primary { background-color: var(--primary); color: #0f172a; font-weight: 600; border: none; }
+    button.primary:hover { background-color: var(--primary-hover); }
+    button.danger { background-color: var(--danger); color: #fff; border: none; }
+    button.danger:hover { background-color: var(--danger-hover); }
+    main { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+    .status-bar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .chip { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; }
+    .chip.admin { background: #3b82f633; color: #60a5fa; border: 1px solid #3b82f666; }
+    .chip.instructor { background: #8b5cf633; color: #a78bfa; border: 1px solid #8b5cf666; }
+    .chip.learner { background: #10b98133; color: #34d399; border: 1px solid #10b98166; }
+    .chip.none { background: #64748b33; color: #94a3b8; border: 1px solid #64748b66; }
+    .chip.active { background: #10b98122; color: #34d399; }
+    .chip.suspended { background: #ef444422; color: #f87171; }
+    .chip.syncing { background: #f59e0b22; color: #fbbf24; }
+    .tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--card-border); margin-bottom: 1.5rem; }
+    .tab-btn { background: none; border: none; padding: 0.75rem 1rem; color: var(--text-muted); font-size: 0.95rem; border-bottom: 2px solid transparent; border-radius: 0; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-tile { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.25rem; }
+    .stat-val { font-size: 2rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+    th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--card-border); }
+    th { color: var(--text-muted); font-weight: 600; }
+    .pill { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; }
+    .pill.yes { background: #10b98133; color: #34d399; }
+    .pill.no { background: #ef444433; color: #f87171; }
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #0284c7; color: #fff; padding: 0.75rem 1.25rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000; font-size: 0.875rem; }
+    /* Drawer */
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: flex-end; z-index: 50; }
+    .drawer-content { width: 450px; max-width: 90vw; background: var(--card-bg); height: 100%; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+    .step-item { display: flex; gap: 1rem; padding: 0.75rem; border-radius: 6px; background: #0f172a; margin-bottom: 0.5rem; border-left: 4px solid var(--card-border); }
+    .step-item.pass { border-left-color: var(--success); }
+    .step-item.fail { border-left-color: var(--danger); }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    const CONFIG = {
+      keycloakUrl: 'http://localhost:8081',
+      realm: 'dat',
+      clientId: 'web-app',
+      redirectUri: window.location.origin + '/dashboard.html'
+    };
+
+    // DOM construction helper
+    function el(tag, props = {}, ...children) {
+      const element = document.createElement(tag);
+      for (const [k, v] of Object.entries(props)) {
+        if (k.startsWith('on') && typeof v === 'function') {
+          element.addEventListener(k.substring(2).toLowerCase(), v);
+        } else if (k === 'className') {
+          element.className = v;
+        } else if (k === 'dataset') {
+          Object.assign(element.dataset, v);
+        } else {
+          element.setAttribute(k, v);
+        }
+      }
+      for (const child of children) {
+        if (typeof child === 'string' || typeof child === 'number') {
+          element.appendChild(document.createTextNode(String(child)));
+        } else if (child instanceof Node) {
+          element.appendChild(child);
+        }
+      }
+      return element;
+    }
+
+    function showToast(msg) {
+      const toast = el('div', { className: 'toast' }, msg);
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // PKCE Utilities
+    function generateRandomString(len) {
+      const array = new Uint8Array(len);
+      crypto.getRandomValues(array);
+      return Array.from(array, dec => ('0' + dec.toString(16)).substr(-2)).join('');
+    }
+
+    async function generateCodeChallenge(verifier) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(verifier);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
+    function startLogin() {
+      const state = generateRandomString(16);
+      const verifier = generateRandomString(32);
+      sessionStorage.setItem('pkce_state', state);
+      sessionStorage.setItem('pkce_verifier', verifier);
+
+      generateCodeChallenge(verifier).then(challenge => {
+        const url = `${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/auth?` +
+          new URLSearchParams({
+            client_id: CONFIG.clientId,
+            response_type: 'code',
+            scope: 'openid email profile',
+            redirect_uri: CONFIG.redirectUri,
+            state: state,
+            code_challenge: challenge,
+            code_challenge_method: 'S256'
+          });
+        window.location.href = url;
+      });
+    }
+
+    async function handleAuthCallback() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const state = params.get('state');
+      const savedState = sessionStorage.getItem('pkce_state');
+      const verifier = sessionStorage.getItem('pkce_verifier');
+
+      if (!code || state !== savedState) return false;
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+      sessionStorage.removeItem('pkce_state');
+      sessionStorage.removeItem('pkce_verifier');
+
+      const body = new URLSearchParams({
+        client_id: CONFIG.clientId,
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: CONFIG.redirectUri,
+        code_verifier: verifier
+      });
+
+      const res = await fetch(`${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+      });
+
+      if (!res.ok) throw new Error('Token exchange failed');
+      const tokens = await res.json();
+      sessionStorage.setItem('access_token', tokens.access_token);
+      sessionStorage.setItem('refresh_token', tokens.refresh_token);
+      return true;
+    }
+
+    async function refreshAccessToken() {
+      const refreshToken = sessionStorage.getItem('refresh_token');
+      if (!refreshToken) return null;
+
+      const body = new URLSearchParams({
+        client_id: CONFIG.clientId,
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken
+      });
+
+      try {
+        const res = await fetch(`${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString()
+        });
+        if (!res.ok) throw new Error('Refresh failed');
+        const tokens = await res.json();
+        sessionStorage.setItem('access_token', tokens.access_token);
+        if (tokens.refresh_token) sessionStorage.setItem('refresh_token', tokens.refresh_token);
+        return tokens.access_token;
+      } catch (e) {
+        sessionStorage.clear();
+        return null;
+      }
+    }
+
+    async function apiFetch(url, options = {}, retried = false) {
+      let token = sessionStorage.getItem('access_token');
+      if (!token) {
+        startLogin();
+        throw new Error('Not authenticated');
+      }
+
+      options.headers = options.headers || {};
+      options.headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(url, options);
+      if (res.status === 401 && !retried) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          return apiFetch(url, options, true);
+        } else {
+          startLogin();
+          throw new Error('Session expired');
+        }
+      }
+      return res;
+    }
+
+    // Application State
+    const state = {
+      user: null,
+      orgs: [],
+      selectedOrgId: null,
+      overview: null,
+      activeTab: 'overview',
+      drawerCourse: null,
+      pollCount: 0,
+      pollTimer: null
+    };
+
+    async function init() {
+      const app = document.getElementById('app');
+      app.textContent = '';
+
+      if (window.location.search.includes('code=')) {
+        try {
+          await handleAuthCallback();
+        } catch (err) {
+          console.error(err);
+          startLogin();
+          return;
+        }
+      }
+
+      const token = sessionStorage.getItem('access_token');
+      if (!token) {
+        renderUnauthenticated();
+        return;
+      }
+
+      try {
+        const res = await apiFetch('/api/me');
+        if (!res.ok) throw new Error('Failed to load user profile');
+        const data = await res.json();
+        state.user = data.user;
+        state.orgs = data.orgs || [];
+
+        if (state.orgs.length > 0) {
+          state.selectedOrgId = state.orgs[0].org_id;
+          await loadOrgOverview(state.selectedOrgId);
+        } else {
+          renderApp();
+        }
+      } catch (err) {
+        renderUnauthenticated();
+      }
+    }
+
+    async function loadOrgOverview(orgId) {
+      try {
+        const res = await apiFetch(`/api/orgs/${encodeURIComponent(orgId)}/overview`);
+        if (!res.ok) {
+          state.overview = null;
+        } else {
+          state.overview = await res.json();
+          handleSyncPolling();
+        }
+      } catch (err) {
+        state.overview = null;
+      }
+      renderApp();
+    }
+
+    function handleSyncPolling() {
+      if (state.overview && state.overview.sync && !state.overview.sync.in_sync && state.pollCount < 8) {
+        clearTimeout(state.pollTimer);
+        state.pollTimer = setTimeout(async () => {
+          state.pollCount++;
+          const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/overview`);
+          if (res.ok) {
+            state.overview = await res.json();
+            renderApp();
+            handleSyncPolling();
+          }
+        }, 1500);
+      } else {
+        state.pollCount = 0;
+      }
+    }
+
+    function triggerActionReload() {
+      showToast('OpenFGA syncs within about a second');
+      setTimeout(async () => {
+        await loadOrgOverview(state.selectedOrgId);
+      }, 1400);
+    }
+
+    function renderUnauthenticated() {
+      const app = document.getElementById('app');
+      app.textContent = '';
+      app.appendChild(
+        el('div', { style: 'display: flex; height: 100vh; align-items: center; justify-content: center;' },
+          el('div', { className: 'card', style: 'text-align: center; width: 360px;' },
+            el('h2', { style: 'margin-bottom: 1rem;' }, 'IAM Dashboard'),
+            el('p', { style: 'color: var(--text-muted); margin-bottom: 1.5rem;' }, 'Sign in to access multi-tenant resources.'),
+            el('button', { className: 'primary', style: 'width: 100%;', onClick: startLogin }, 'Sign In with Keycloak')
+          )
+        )
+      );
+    }
+
+    function renderApp() {
+      const app = document.getElementById('app');
+      app.textContent = '';
+
+      // Header
+      const header = el('header', {},
+        el('div', { className: 'header-left' },
+          el('h3', {}, 'IAM Portal'),
+          state.orgs.length > 0 ? el('select', {
+            onChange: async (e) => {
+              state.selectedOrgId = e.target.value;
+              state.pollCount = 0;
+              await loadOrgOverview(state.selectedOrgId);
+            }
+          }, ...state.orgs.map(o => {
+            const opt = el('option', { value: o.org_id }, o.name);
+            if (o.org_id === state.selectedOrgId) opt.selected = true;
+            return opt;
+          })) : null
+        ),
+        el('div', { className: 'header-right' },
+          el('span', { style: 'font-size: 0.875rem; color: var(--text-muted);' }, state.user.email),
+          el('button', {
+            onClick: async () => {
+              await apiFetch('/api/auth/revoke-session', { method: 'POST' });
+              sessionStorage.clear();
+              startLogin();
+            }
+          }, 'Revoke session'),
+          el('button', {
+            onClick: () => {
+              sessionStorage.clear();
+              window.location.href = `${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/logout?redirect_uri=${encodeURIComponent(CONFIG.redirectUri)}`;
+            }
+          }, 'Sign out')
+        )
+      );
+      app.appendChild(header);
+
+      const main = el('main');
+      app.appendChild(main);
+
+      // Empty State: Create Organization
+      if (state.orgs.length === 0) {
+        main.appendChild(
+          el('div', { className: 'card' },
+            el('h3', { style: 'margin-bottom: 1rem;' }, 'Create an Organization'),
+            el('p', { style: 'color: var(--text-muted); margin-bottom: 1rem;' }, 'You do not belong to any organization. Register one to get started:'),
+            el('form', {
+              onSubmit: async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const orgId = form.org_id.value.trim();
+                const name = form.name.value.trim();
+                const res = await apiFetch('/api/orgs', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ org_id: orgId, name })
+                });
+                if (res.ok) {
+                  triggerActionReload();
+                  const meRes = await apiFetch('/api/me');
+                  const meData = await meRes.json();
+                  state.orgs = meData.orgs;
+                  state.selectedOrgId = orgId;
+                  await loadOrgOverview(orgId);
+                } else {
+                  const err = await res.json();
+                  alert(err.error || 'Failed to create organization');
+                }
+              }
+            },
+              el('div', { style: 'display: flex; gap: 1rem; margin-bottom: 1rem;' },
+                el('input', { name: 'org_id', placeholder: 'organization:myorg', required: true, style: 'flex: 1;' }),
+                el('input', { name: 'name', placeholder: 'Display Name', required: true, style: 'flex: 1;' })
+              ),
+              el('button', { className: 'primary', type: 'submit' }, 'Create Organization')
+            )
+          )
+        );
+        return;
+      }
+
+      if (!state.overview) {
+        main.appendChild(el('div', { className: 'card' }, 'Loading organization data...'));
+        return;
+      }
+
+      const ov = state.overview;
+      const myRole = ov.me.role;
+
+      // Status Bar
+      const roleChip = el('span', { className: `chip ${myRole || 'none'}` }, myRole ? `Role: ${myRole}` : 'No Active Role');
+      const tenantChip = el('span', { className: `chip ${ov.me.tenant_active ? 'active' : 'suspended'}` }, ov.me.tenant_active ? 'Tenant Active' : 'Tenant Suspended');
+      const memberChip = el('span', { className: `chip ${!ov.me.suspended ? 'active' : 'suspended'}` }, !ov.me.suspended ? 'Membership Active' : 'Membership Suspended');
+      const syncChip = el('span', { className: `chip ${ov.sync.in_sync ? 'active' : 'syncing'}` }, ov.sync.in_sync ? 'Permissions in sync' : 'Syncing changes...');
+
+      main.appendChild(el('div', { className: 'status-bar' }, roleChip, tenantChip, memberChip, syncChip));
+
+      // No role explanation
+      if (!myRole) {
+        let reason = 'You do not currently have an active role in this organization.';
+        if (!ov.me.tenant_active) reason = 'This organization has been suspended.';
+        else if (ov.me.suspended) reason = 'Your membership in this organization is suspended.';
+
+        main.appendChild(el('div', { className: 'card', style: 'border-left: 4px solid var(--danger);' },
+          el('h4', { style: 'color: #f87171; margin-bottom: 0.5rem;' }, 'Access Suspended'),
+          el('p', { style: 'color: var(--text-muted);' }, reason)
+        ));
+        return;
+      }
+
+      // Admin vs Learner/Instructor routing
+      if (myRole === 'admin') {
+        renderAdminView(main);
+      } else {
+        renderLearnerInstructorView(main);
+      }
+
+      // Drawer
+      if (state.drawerCourse) {
+        renderTraceDrawer();
+      }
+    }
+
+    function renderLearnerInstructorView(container) {
+      container.appendChild(el('h3', { style: 'margin-bottom: 1rem;' }, 'Courses'));
+      const courses = state.overview.courses || [];
+
+      if (courses.length === 0) {
+        container.appendChild(el('div', { className: 'card' }, 'No courses available for your permission level.'));
+        return;
+      }
+
+      const grid = el('div', { style: 'display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;' });
+      for (const c of courses) {
+        grid.appendChild(
+          el('div', { className: 'card', style: 'margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;' },
+            el('div', {},
+              el('h4', { style: 'margin-bottom: 0.5rem;' }, c.title),
+              el('p', { style: 'color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;' }, c.course_id),
+              el('div', { style: 'display: flex; gap: 0.5rem; margin-bottom: 1.5rem;' },
+                el('span', { className: `pill ${c.view ? 'yes' : 'no'}` }, 'View'),
+                el('span', { className: `pill ${c.edit ? 'yes' : 'no'}` }, 'Edit'),
+                el('span', { className: `pill ${c.delete ? 'yes' : 'no'}` }, 'Delete')
+              )
+            ),
+            el('button', {
+              onClick: () => {
+                state.drawerCourse = c;
+                renderTraceDrawer();
+              }
+            }, 'Why do I have this access?')
+          )
+        );
+      }
+      container.appendChild(grid);
+    }
+
+    function renderAdminView(container) {
+      // Tabs
+      const tabs = el('div', { className: 'tabs' },
+        el('button', {
+          className: `tab-btn ${state.activeTab === 'overview' ? 'active' : ''}`,
+          onClick: () => { state.activeTab = 'overview'; renderApp(); }
+        }, 'Overview'),
+        el('button', {
+          className: `tab-btn ${state.activeTab === 'members' ? 'active' : ''}`,
+          onClick: () => { state.activeTab = 'members'; renderApp(); }
+        }, 'Members & Permissions'),
+        el('button', {
+          className: `tab-btn ${state.activeTab === 'courses' ? 'active' : ''}`,
+          onClick: () => { state.activeTab = 'courses'; renderApp(); }
+        }, 'Courses'),
+        el('button', {
+          className: `tab-btn ${state.activeTab === 'audit' ? 'active' : ''}`,
+          onClick: () => { state.activeTab = 'audit'; renderApp(); }
+        }, 'Audit Log')
+      );
+      container.appendChild(tabs);
+
+      if (state.activeTab === 'overview') renderAdminOverviewTab(container);
+      else if (state.activeTab === 'members') renderAdminMembersTab(container);
+      else if (state.activeTab === 'courses') renderAdminCoursesTab(container);
+      else if (state.activeTab === 'audit') renderAdminAuditTab(container);
+    }
+
+    async function renderAdminOverviewTab(container) {
+      const stats = state.overview.stats || { members: 0, courses: 0 };
+      const statsGrid = el('div', { className: 'grid-stats' },
+        el('div', { className: 'stat-tile' },
+          el('span', { style: 'color: var(--text-muted); font-size: 0.875rem;' }, 'Total Members'),
+          el('div', { className: 'stat-val' }, stats.members)
+        ),
+        el('div', { className: 'stat-tile' },
+          el('span', { style: 'color: var(--text-muted); font-size: 0.875rem;' }, 'Total Courses'),
+          el('div', { className: 'stat-val' }, stats.courses)
+        )
+      );
+      container.appendChild(statsGrid);
+
+      // Recent 6 audit logs
+      const auditCard = el('div', { className: 'card' },
+        el('h4', { style: 'margin-bottom: 1rem;' }, 'Recent Audit Events (Last 6)')
+      );
+      container.appendChild(auditCard);
+
+      try {
+        const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/audit-logs?limit=6`);
+        if (res.ok) {
+          const data = await res.json();
+          const table = el('table', {},
+            el('thead', {},
+              el('tr', {},
+                el('th', {}, 'Time'),
+                el('th', {}, 'User'),
+                el('th', {}, 'Action'),
+                el('th', {}, 'Resource'),
+                el('th', {}, 'Decision')
+              )
+            ),
+            el('tbody', {}, ...data.logs.map(log =>
+              el('tr', {},
+                el('td', {}, new Date(log.created_at).toLocaleTimeString()),
+                el('td', {}, log.user_sub),
+                el('td', {}, log.action),
+                el('td', {}, log.resource_id),
+                el('td', {}, el('span', { className: `pill ${log.decision === 'ALLOW' ? 'yes' : 'no'}` }, log.decision))
+              )
+            ))
+          );
+          auditCard.appendChild(table);
+        }
+      } catch (e) {
+        auditCard.appendChild(el('p', { style: 'color: var(--text-muted);' }, 'Failed to load audit events.'));
+      }
+    }
+
+    async function renderAdminMembersTab(container) {
+      // Add member form
+      const addForm = el('div', { className: 'card' },
+        el('h4', { style: 'margin-bottom: 1rem;' }, 'Add Member'),
+        el('form', {
+          onSubmit: async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.email.value.trim();
+            const role = form.role.value;
+            const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/memberships`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, role })
+            });
+            if (res.ok) {
+              form.reset();
+              triggerActionReload();
+            } else {
+              const err = await res.json();
+              alert(err.error || 'Failed to add member');
+            }
+          }
+        },
+          el('div', { style: 'display: flex; gap: 1rem;' },
+            el('input', { name: 'email', placeholder: 'user@example.com', required: true, style: 'flex: 2;' }),
+            el('select', { name: 'role', style: 'flex: 1;' },
+              el('option', { value: 'learner' }, 'Learner'),
+              el('option', { value: 'instructor' }, 'Instructor'),
+              el('option', { value: 'admin' }, 'Admin')
+            ),
+            el('button', { className: 'primary', type: 'submit' }, 'Add Member')
+          )
+        )
+      );
+      container.appendChild(addForm);
+
+      // Members table
+      const membersCard = el('div', { className: 'card' },
+        el('h4', { style: 'margin-bottom: 1rem;' }, 'Organization Members')
+      );
+      container.appendChild(membersCard);
+
+      try {
+        const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members`);
+        if (res.ok) {
+          const data = await res.json();
+          const table = el('table', {},
+            el('thead', {},
+              el('tr', {},
+                el('th', {}, 'Member'),
+                el('th', {}, 'Role'),
+                el('th', {}, 'Status'),
+                el('th', {}, 'Actions')
+              )
+            ),
+            el('tbody', {}, ...data.members.map(m => {
+              const roleSelect = el('select', {
+                disabled: m.user_sub === state.user.sub,
+                onChange: async (e) => {
+                  const newRole = e.target.value;
+                  if (confirm(`Change role of ${m.email || m.user_sub} to ${newRole}?`)) {
+                    const patchRes = await apiFetch(
+                      `/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}/role`,
+                      {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ role: newRole })
+                      }
+                    );
+                    if (patchRes.ok) triggerActionReload();
+                    else {
+                      const err = await patchRes.json();
+                      alert(err.error || 'Failed to change role');
+                      e.target.value = m.role;
+                    }
+                  } else {
+                    e.target.value = m.role;
+                  }
+                }
+              },
+                el('option', { value: 'admin', selected: m.role === 'admin' }, 'admin'),
+                el('option', { value: 'instructor', selected: m.role === 'instructor' }, 'instructor'),
+                el('option', { value: 'learner', selected: m.role === 'learner' }, 'learner')
+              );
+
+              const suspendBtn = el('button', {
+                disabled: m.user_sub === state.user.sub,
+                onClick: async () => {
+                  const action = m.is_suspended ? 'unsuspend' : 'suspend';
+                  const patchRes = await apiFetch(
+                    `/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}/${action}`,
+                    { method: 'PATCH' }
+                  );
+                  if (patchRes.ok) triggerActionReload();
+                  else {
+                    const err = await patchRes.json();
+                    alert(err.error || `Failed to ${action} member`);
+                  }
+                }
+              }, m.is_suspended ? 'Reinstate' : 'Suspend');
+
+              const removeBtn = el('button', {
+                className: 'danger',
+                disabled: m.user_sub === state.user.sub,
+                onClick: async () => {
+                  if (confirm(`Remove member ${m.email || m.user_sub}?`)) {
+                    const delRes = await apiFetch(
+                      `/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}`,
+                      { method: 'DELETE' }
+                    );
+                    if (delRes.ok) triggerActionReload();
+                    else {
+                      const err = await delRes.json();
+                      alert(err.error || 'Failed to remove member');
+                    }
+                  }
+                }
+              }, 'Remove');
+
+              return el('tr', {},
+                el('td', {},
+                  el('div', { style: 'font-weight: 600;' }, m.name || m.user_sub),
+                  el('div', { style: 'font-size: 0.75rem; color: var(--text-muted);' }, m.email || m.user_sub)
+                ),
+                el('td', {}, roleSelect),
+                el('td', {}, el('span', { className: `chip ${m.is_suspended ? 'suspended' : 'active'}` }, m.is_suspended ? 'Suspended' : 'Active')),
+                el('td', {}, el('div', { style: 'display: flex; gap: 0.5rem;' }, suspendBtn, removeBtn))
+              );
+            }))
+          );
+          membersCard.appendChild(table);
+        }
+      } catch (e) {
+        membersCard.appendChild(el('p', { style: 'color: var(--text-muted);' }, 'Failed to load members.'));
+      }
+
+      // Static Role-Capability Matrix
+      const matrixCard = el('div', { className: 'card' },
+        el('h4', { style: 'margin-bottom: 1rem;' }, 'Role Capability Matrix'),
+        el('table', {},
+          el('thead', {},
+            el('tr', {},
+              el('th', {}, 'Capability'),
+              el('th', {}, 'Learner'),
+              el('th', {}, 'Instructor'),
+              el('th', {}, 'Admin')
+            )
+          ),
+          el('tbody', {},
+            el('tr', {},
+              el('td', {}, 'View Courses'),
+              el('td', {}, el('span', { className: 'pill yes' }, 'YES')),
+              el('td', {}, el('span', { className: 'pill yes' }, 'YES')),
+              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
+            ),
+            el('tr', {},
+              el('td', {}, 'Edit Courses'),
+              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
+              el('td', {}, el('span', { className: 'pill yes' }, 'YES')),
+              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
+            ),
+            el('tr', {},
+              el('td', {}, 'Delete Courses'),
+              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
+              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
+              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
+            ),
+            el('tr', {},
+              el('td', {}, 'Manage Members & Roles'),
+              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
+              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
+              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
+            ),
+            el('tr', {},
+              el('td', {}, 'View Audit Logs'),
+              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
+              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
+              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
+            )
+          )
+        )
+      );
+      container.appendChild(matrixCard);
+    }
+
+    function renderAdminCoursesTab(container) {
+      // Create course form
+      const createCard = el('div', { className: 'card' },
+        el('h4', { style: 'margin-bottom: 1rem;' }, 'Create New Course'),
+        el('form', {
+          onSubmit: async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const courseId = form.course_id.value.trim();
+            const title = form.title.value.trim();
+            const res = await apiFetch('/api/courses', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ course_id: courseId, org_id: state.selectedOrgId, title })
+            });
+            if (res.ok) {
+              form.reset();
+              triggerActionReload();
+            } else {
+              const err = await res.json();
+              alert(err.error || 'Failed to create course');
+            }
+          }
+        },
+          el('div', { style: 'display: flex; gap: 1rem;' },
+            el('input', { name: 'course_id', placeholder: 'course:cs301', required: true, style: 'flex: 1;' }),
+            el('input', { name: 'title', placeholder: 'Course Title', required: true, style: 'flex: 2;' }),
+            el('button', { className: 'primary', type: 'submit' }, 'Create Course')
+          )
+        )
+      );
+      container.appendChild(createCard);
+
+      // Courses table
+      const listCard = el('div', { className: 'card' },
+        el('h4', { style: 'margin-bottom: 1rem;' }, 'Courses & Access')
+      );
+      container.appendChild(listCard);
+
+      const courses = state.overview.courses || [];
+      if (courses.length === 0) {
+        listCard.appendChild(el('p', { style: 'color: var(--text-muted);' }, 'No courses created yet.'));
+      } else {
+        const table = el('table', {},
+          el('thead', {},
+            el('tr', {},
+              el('th', {}, 'Course ID'),
+              el('th', {}, 'Title'),
+              el('th', {}, 'Permissions'),
+              el('th', {}, 'Trace')
+            )
+          ),
+          el('tbody', {}, ...courses.map(c =>
+            el('tr', {},
+              el('td', { style: 'font-family: monospace;' }, c.course_id),
+              el('td', {}, c.title),
+              el('td', {},
+                el('div', { style: 'display: flex; gap: 0.35rem;' },
+                  el('span', { className: `pill ${c.view ? 'yes' : 'no'}` }, 'view'),
+                  el('span', { className: `pill ${c.edit ? 'yes' : 'no'}` }, 'edit'),
+                  el('span', { className: `pill ${c.delete ? 'yes' : 'no'}` }, 'delete')
+                )
+              ),
+              el('td', {},
+                el('button', {
+                  onClick: () => {
+                    state.drawerCourse = c;
+                    renderTraceDrawer();
+                  }
+                }, 'Trace')
+              )
+            )
+          ))
+        );
+        listCard.appendChild(table);
+      }
+    }
+
+    async function renderAdminAuditTab(container) {
+      let filterDecision = '';
+      const card = el('div', { className: 'card' });
+      container.appendChild(card);
+
+      const filterBar = el('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;' },
+        el('div', { style: 'display: flex; gap: 1rem; align-items: center;' },
+          el('label', { style: 'font-size: 0.875rem;' }, 'Filter Decision:'),
+          el('select', {
+            onChange: (e) => {
+              filterDecision = e.target.value;
+              loadLogs();
+            }
+          },
+            el('option', { value: '' }, 'All Decisions'),
+            el('option', { value: 'ALLOW' }, 'ALLOW'),
+            el('option', { value: 'DENY' }, 'DENY')
+          ),
+          el('button', { onClick: () => loadLogs() }, 'Refresh')
+        ),
+        el('button', {
+          className: 'primary',
+          onClick: async () => {
+            const token = sessionStorage.getItem('access_token');
+            const q = filterDecision ? `&decision=${filterDecision}` : '';
+            const res = await fetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/audit-logs?format=csv${q}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const blob = await res.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `audit-${state.selectedOrgId}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+            } else {
+              alert('CSV export failed');
+            }
+          }
+        }, 'Export CSV')
+      );
+      card.appendChild(filterBar);
+
+      const tableContainer = el('div');
+      card.appendChild(tableContainer);
+
+      async function loadLogs() {
+        tableContainer.textContent = 'Loading logs...';
+        try {
+          const q = filterDecision ? `&decision=${filterDecision}` : '';
+          const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/audit-logs?limit=50${q}`);
+          if (res.ok) {
+            const data = await res.json();
+            tableContainer.textContent = '';
+            if (data.logs.length === 0) {
+              tableContainer.appendChild(el('p', { style: 'color: var(--text-muted);' }, 'No audit logs found.'));
+              return;
+            }
+            const table = el('table', {},
+              el('thead', {},
+                el('tr', {},
+                  el('th', {}, 'Time'),
+                  el('th', {}, 'User Sub'),
+                  el('th', {}, 'Action'),
+                  el('th', {}, 'Resource'),
+                  el('th', {}, 'Decision'),
+                  el('th', {}, 'Context')
+                )
+              ),
+              el('tbody', {}, ...data.logs.map(log => {
+                let ctxStr = '';
+                try {
+                  const ctx = typeof log.context === 'string' ? JSON.parse(log.context) : log.context;
+                  ctxStr = ctx?.ip ? `IP: ${ctx.ip}` : '';
+                } catch (e) {}
+
+                return el('tr', {},
+                  el('td', {}, new Date(log.created_at).toLocaleString()),
+                  el('td', {}, log.user_sub),
+                  el('td', {}, log.action),
+                  el('td', {}, log.resource_id),
+                  el('td', {}, el('span', { className: `pill ${log.decision === 'ALLOW' ? 'yes' : 'no'}` }, log.decision)),
+                  el('td', { style: 'font-size: 0.75rem; color: var(--text-muted);' }, ctxStr)
+                );
+              }))
+            );
+            tableContainer.appendChild(table);
+          }
+        } catch (e) {
+          tableContainer.textContent = 'Error loading logs.';
+        }
+      }
+
+      loadLogs();
+    }
+
+    async function renderTraceDrawer() {
+      const existing = document.getElementById('trace-drawer');
+      if (existing) existing.remove();
+
+      const course = state.drawerCourse;
+      if (!course) return;
+
+      const content = el('div', { className: 'drawer-content' },
+        el('div', { style: 'display: flex; justify-content: space-between; align-items: center;' },
+          el('h3', {}, 'Access Evaluation Trace'),
+          el('button', {
+            onClick: () => {
+              state.drawerCourse = null;
+              const d = document.getElementById('trace-drawer');
+              if (d) d.remove();
+            }
+          }, 'Close')
+        ),
+        el('div', {},
+          el('h4', {}, course.title),
+          el('p', { style: 'color: var(--text-muted); font-size: 0.8rem;' }, course.course_id)
+        ),
+        el('div', { id: 'trace-steps-container' }, 'Evaluating policy trace...')
+      );
+
+      const backdrop = el('div', {
+        id: 'trace-drawer',
+        className: 'drawer-backdrop',
+        onClick: (e) => {
+          if (e.target === backdrop) {
+            state.drawerCourse = null;
+            backdrop.remove();
+          }
+        }
+      }, content);
+
+      document.body.appendChild(backdrop);
+
+      try {
+        const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/courses/${encodeURIComponent(course.course_id)}/trace`);
+        const stepsContainer = document.getElementById('trace-steps-container');
+        if (stepsContainer && res.ok) {
+          const data = await res.json();
+          stepsContainer.textContent = '';
+
+          for (const s of data.steps) {
+            stepsContainer.appendChild(
+              el('div', { className: `step-item ${s.passed ? 'pass' : 'fail'}` },
+                el('div', { style: 'font-size: 1.25rem;' }, s.passed ? '✓' : '✗'),
+                el('div', {},
+                  el('div', { style: 'font-weight: 600; text-transform: capitalize;' }, s.step.replace(/_/g, ' ')),
+                  el('div', { style: 'font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;' }, s.detail)
+                )
+              )
+            );
+          }
+
+          stepsContainer.appendChild(
+            el('div', { className: 'card', style: 'margin-top: 1rem;' },
+              el('h5', { style: 'margin-bottom: 0.5rem;' }, 'Final Effective Access'),
+              el('div', { style: 'display: flex; gap: 0.5rem;' },
+                el('span', { className: `pill ${data.decision.can_view ? 'yes' : 'no'}` }, 'can_view'),
+                el('span', { className: `pill ${data.decision.can_edit ? 'yes' : 'no'}` }, 'can_edit'),
+                el('span', { className: `pill ${data.decision.can_delete ? 'yes' : 'no'}` }, 'can_delete')
+              )
+            )
+          );
+        }
+      } catch (e) {
+        const sc = document.getElementById('trace-steps-container');
+        if (sc) sc.textContent = 'Failed to load policy evaluation steps.';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

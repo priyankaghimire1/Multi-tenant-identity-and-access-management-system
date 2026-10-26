@@ -5,17 +5,17 @@
 # If you changed ports:  .\test\test.ps1 -KcBase http://localhost:8090
 
 param(
-  [string]$KcBase = "http://localhost:8080",
-  [string]$GwBase = "http://localhost:4000"
+  [string]$KcBase = "http://localhost:8081",
+  [string]$GwBase = "http://localhost:3000"
 )
 
-$KcToken = "$KcBase/realms/multitenant/protocol/openid-connect/token"
+$KcToken = "$KcBase/realms/dat/protocol/openid-connect/token"
 $script:Pass = 0
 $script:Fail = 0
 
 function Get-Token([string]$User) {
   $r = Invoke-RestMethod -Method Post -Uri $KcToken -Body @{
-    grant_type = "password"; client_id = "gateway-test"
+    grant_type = "password"; client_id = "web-app"
     username = $User; password = "password"
   }
   return $r.access_token
@@ -43,7 +43,7 @@ try {
   $Alice = Get-Token "alice"; $Bob = Get-Token "bob"; $Carol = Get-Token "carol"
 } catch {
   Write-Host "Could not get tokens from $KcToken" -ForegroundColor Red
-  Write-Host "Is Keycloak up and the 'multitenant' realm imported?  ($($_.Exception.Message))"
+  Write-Host "Is Keycloak up and the 'dat' realm imported?  ($($_.Exception.Message))"
   exit 1
 }
 

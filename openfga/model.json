@@ -68,7 +68,7 @@
         },
         "org_admin": {
           "intersection": {
-            "children": [
+            "child": [
               {
                 "computedUserset": {
                   "relation": "live_admin"
@@ -84,7 +84,7 @@
         },
         "org_instructor": {
           "intersection": {
-            "children": [
+            "child": [
               {
                 "computedUserset": {
                   "relation": "live_instructor"
@@ -100,7 +100,7 @@
         },
         "org_learner": {
           "intersection": {
-            "children": [
+            "child": [
               {
                 "computedUserset": {
                   "relation": "live_learner"
@@ -116,7 +116,7 @@
         },
         "org_member": {
           "union": {
-            "children": [
+            "child": [
               {
                 "computedUserset": {
                   "relation": "org_admin"
@@ -140,28 +140,60 @@
         "relations": {
           "admin": {
             "directly_related_user_types": [
-              { "type": "user" }
+              {
+                "type": "user"
+              }
             ]
           },
           "instructor": {
             "directly_related_user_types": [
-              { "type": "user" }
+              {
+                "type": "user"
+              }
             ]
           },
           "learner": {
             "directly_related_user_types": [
-              { "type": "user" }
+              {
+                "type": "user"
+              }
             ]
           },
           "suspended": {
             "directly_related_user_types": [
-              { "type": "user" }
+              {
+                "type": "user"
+              }
             ]
           },
           "tenant_active": {
             "directly_related_user_types": [
-              { "type": "user", "wildcard": {} }
+              {
+                "type": "user",
+                "wildcard": {}
+              }
             ]
+          },
+          "live_admin": {
+            "directly_related_user_types": []
+          },
+          "live_instructor": {
+            "directly_related_user_types": []
+          },
+          "live_learner": {
+            "directly_related_user_types": []
+          },
+          "org_admin": {
+            "directly_related_user_types": []
+          },
+          "org_instructor": {
+            "directly_related_user_types": []
+          },
+          "org_learner": {
+            "directly_related_user_types": []
+          },
+          "org_member": {
+            "directly_related_user_types": []
           }
         }
       }
@@ -174,34 +206,34 @@
         },
         "can_view": {
           "tupleToUserset": {
-            "tupleset": {
-              "relation": "org"
-            },
             "computedUserset": {
               "relation": "org_member"
+            },
+            "tupleset": {
+              "relation": "org"
             }
           }
         },
         "can_edit": {
           "union": {
-            "children": [
+            "child": [
               {
                 "tupleToUserset": {
-                  "tupleset": {
-                    "relation": "org"
-                  },
                   "computedUserset": {
                     "relation": "org_instructor"
+                  },
+                  "tupleset": {
+                    "relation": "org"
                   }
                 }
               },
               {
                 "tupleToUserset": {
-                  "tupleset": {
-                    "relation": "org"
-                  },
                   "computedUserset": {
                     "relation": "org_admin"
+                  },
+                  "tupleset": {
+                    "relation": "org"
                   }
                 }
               }
@@ -210,11 +242,11 @@
         },
         "can_delete": {
           "tupleToUserset": {
-            "tupleset": {
-              "relation": "org"
-            },
             "computedUserset": {
               "relation": "org_admin"
+            },
+            "tupleset": {
+              "relation": "org"
             }
           }
         }
@@ -223,8 +255,19 @@
         "relations": {
           "org": {
             "directly_related_user_types": [
-              { "type": "organization" }
+              {
+                "type": "organization"
+              }
             ]
+          },
+          "can_view": {
+            "directly_related_user_types": []
+          },
+          "can_edit": {
+            "directly_related_user_types": []
+          },
+          "can_delete": {
+            "directly_related_user_types": []
           }
         }
       }

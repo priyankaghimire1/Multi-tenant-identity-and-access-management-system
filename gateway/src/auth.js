@@ -47,35 +47,66 @@ async function requireAuth(req, res, next) {
  */
 function requirePermission(relation, getObjectId) {
   return async (req, res, next) => {
-    const objectId = typeof getObjectId === 'function' ? getObjectId(req) : getObjectId;
-    const userSub = req.user.sub;
-    const orgId = req.headers['x-tenant-id'] || null;
+    try {
+      const objectId = typeof getObjectId === 'function' ? getObjectId(req) : getObjectId;
+      if (typeof objectId !== 'string' || !objectId) {
+        return res.status(400).json({ error: 'Missing resource identifier' });
+      }
+      const userSub = req.user.sub;
 
-    const allowed = await checkPermission(userSub, relation, objectId);
+      const allowed = await checkPermission(userSub, relation, objectId);
+      await recordAudit(req, relation, objectId, allowed);
 
-    // Append-only audit record
-    await pool.query(
-      `INSERT INTO audit_logs (user_sub, org_id, action, resource, decision, context)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        userSub,
-        orgId,
-        relation,
-        objectId,
-        allowed ? 'ALLOW' : 'DENY',
-        JSON.stringify({ ip: req.ip, method: req.method, path: req.originalUrl })
-      ]
-    );
+      if (!allowed) {
+        return res.status(403).json({ error: 'Forbidden: Relationship check denied access' });
+      }
 
-    if (!allowed) {
-      return res.status(403).json({ error: 'Forbidden: Relationship check denied access' });
+      next();
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
-
-    next();
   };
+}
+
+/**
+ * Resolve the owning tenant from the resource itself. The X-Tenant-ID header is
+ * client-controlled, so it is never trusted for audit attribution.
+ */
+async function resolveOrgId(objectId) {
+  if (objectId.startsWith('organization:')) return objectId;
+  if (objectId.startsWith('course:')) {
+    const { rows } = await pool.query('SELECT org_id FROM courses WHERE id = $1', [objectId]);
+    if (rows.length > 0) return rows[0].org_id;
+  }
+  return null;
+}
+
+/**
+ * Append-only audit record
+ */
+async function recordAudit(req, action, objectId, allowed) {
+  const orgId = await resolveOrgId(objectId);
+  await pool.query(
+    `INSERT INTO audit_logs (user_sub, org_id, action, resource, decision, context)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
+      req.user.sub,
+      orgId,
+      action,
+      objectId,
+      allowed ? 'ALLOW' : 'DENY',
+      JSON.stringify({
+        ip: req.ip,
+        method: req.method,
+        path: req.originalUrl,
+        claimed_tenant: req.headers['x-tenant-id'] || null
+      })
+    ]
+  );
 }
 
 module.exports = {
   requireAuth,
-  requirePermission
+  requirePermission,
+  recordAudit
 };

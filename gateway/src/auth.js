@@ -18,7 +18,7 @@ async function resolveOrgId(objectId) {
   if (objectId.startsWith('organization:')) return objectId;
   if (objectId.startsWith('course:')) {
     const { rows } = await pool.query(
-      'SELECT org_id FROM courses WHERE course_id = $1 OR id = $1',
+      'SELECT org_id FROM courses WHERE id = $1', // <--- FIXED
       [objectId]
     );
     if (rows.length > 0) return rows[0].org_id;
@@ -97,13 +97,6 @@ function requirePermission(relation, getObjectId) {
           }
         }
       }
-      console.log('[AUTHZ DEBUG]', {
-  userSub: req.user.sub,
-  relation,
-  objectId,
-  orgId
-});
-
 
       const allowed = await checkPermission(userSub, relation, objectId);
       await recordAudit(req, relation, objectId, allowed);

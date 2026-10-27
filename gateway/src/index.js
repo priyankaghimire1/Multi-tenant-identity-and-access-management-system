@@ -177,7 +177,7 @@ app.patch('/api/orgs/:org_id/suspend',
   requireAuth,
   requirePermission('super_admin', () => 'platform:root'),
   wrap(async (req, res) => {
-    const { org_id } = req.params;
+    const org_id = orgFromParams(req);
     await withTx(async (client) => {
       const r = await client.query(
         'UPDATE organizations SET is_active = FALSE WHERE id = $1 AND is_active = TRUE',
@@ -197,7 +197,7 @@ app.patch('/api/orgs/:org_id/unsuspend',
   requireAuth,
   requirePermission('super_admin', () => 'platform:root'),
   wrap(async (req, res) => {
-    const { org_id } = req.params;
+    const org_id = orgFromParams(req);
     await withTx(async (client) => {
       const r = await client.query(
         'UPDATE organizations SET is_active = TRUE WHERE id = $1 AND is_active = FALSE',
@@ -593,9 +593,11 @@ app.post('/api/courses',
 
 app.get('/api/courses/:course_id',
   requireAuth,
-  requirePermission('can_view', (req) => req.params.course_id),
+  requirePermission('can_view', (req) => decodeURIComponent(req.params.course_id)),
   wrap(async (req, res) => {
-    const { course_id } = req.params;
+    const course_id = decodeURIComponent(req.params.course_id);
+    console.log("!!!! FETCHING COURSE ID:", course_id); // <--- ADD THIS
+    
     const { rows } = await pool.query('SELECT * FROM courses WHERE id = $1', [course_id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Course not found' });
     res.json(rows[0]);

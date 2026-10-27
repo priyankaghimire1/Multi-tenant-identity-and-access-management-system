@@ -64,12 +64,23 @@ async function processOutboxQueue() {
     for (const event of events) {
       const { action, user, relation, object } = event.payload;
 
-      if (action === 'WRITE') {
-        await fgaClient.writeTuples([{ user, relation, object }]);
-      } else if (action === 'DELETE') {
-        await fgaClient.deleteTuples([{ user, relation, object }]);
+      try {
+        if (action === 'WRITE') {
+          await fgaClient.writeTuples([{ user, relation, object }]);
+        } else if (action === 'DELETE') {
+          await fgaClient.deleteTuples([{ user, relation, object }]);
+        }
+      } catch (err) {
+        // If it already exists, just ignore it and mark as processed.
+        // Do NOT crash the whole loop.
+        if (err.message && (err.message.includes('already exists') || err.statusCode === 400)) {
+          console.log(`[Outbox] Tuple exists, skipping: ${user} ${relation} ${object}`);
+        } else {
+          console.error(`[Outbox] Failed to sync tuple ${user} ${relation} ${object}:`, err.message);
+        }
       }
 
+      // Always mark as processed so the queue doesn't get stuck
       await client.query('UPDATE outbox_events SET processed = TRUE WHERE id = $1', [event.id]);
     }
   } catch (err) {

@@ -1,3 +1,4 @@
+// gateway/src/index.js
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -9,6 +10,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Auto-migrate: Ensure session_revoked_at exists on tenant_memberships
+(async () => {
+  try {
+    await pool.query(`
+      ALTER TABLE tenant_memberships 
+      ADD COLUMN IF NOT EXISTS session_revoked_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+    `);
+  } catch (err) {
+    console.error('Failed to ensure session_revoked_at column:', err.message);
+  }
+})();
 
 // ----------------------------------------------------
 // Helpers
@@ -82,40 +95,80 @@ async function assertNotLastAdmin(client, org_id, user_sub) {
 const orgFromParams = (req) => req.params.org_id;
 
 // ----------------------------------------------------
-// M1 & M5: Organization Provisioning & Suspension
+// Platform Governance: Master Admin Only
 // ----------------------------------------------------
-app.post('/api/orgs', requireAuth, wrap(async (req, res) => {
-  const { org_id, name, domain } = req.body || {};
-  if (typeof org_id !== 'string' || !ORG_ID_RE.test(org_id) || !name || !domain) {
-    throw new HttpError(400, 'org_id (organization:<slug>), name and domain are required');
-  }
-  await ensureProfile(req.user);
 
-  await withTx(async (client) => {
-    await client.query(
-      'INSERT INTO organizations (id, name, domain, is_active) VALUES ($1, $2, $3, TRUE)',
-      [org_id, name, domain]
-    );
-    // The creator becomes the first admin of the new tenant.
-    await client.query(
-      "INSERT INTO tenant_memberships (user_sub, org_id, role) VALUES ($1, $2, 'admin')",
-      [req.user.sub, org_id]
-    );
-    await outbox(client, 'TENANT_PROVISIONED', {
-      action: 'WRITE', user: 'user:*', relation: 'tenant_active', object: org_id
+// List all organizations across the platform (master admin only)
+app.get('/api/admin/orgs',
+  requireAuth,
+  requirePermission('super_admin', () => 'platform:root'),
+  wrap(async (req, res) => {
+    const { rows } = await pool.query(`
+      SELECT o.id, o.name, o.domain, o.is_active, o.created_at,
+             COUNT(DISTINCT m.user_sub)::int AS member_count,
+             COUNT(DISTINCT c.id)::int AS course_count
+        FROM organizations o
+        LEFT JOIN tenant_memberships m ON m.org_id = o.id
+        LEFT JOIN courses c ON c.org_id = o.id
+       GROUP BY o.id, o.name, o.domain, o.is_active, o.created_at
+       ORDER BY o.name ASC
+    `);
+    res.json(rows);
+  })
+);
+
+// Provision new organization with an initial admin (master admin only)
+app.post('/api/orgs',
+  requireAuth,
+  requirePermission('super_admin', () => 'platform:root'),
+  wrap(async (req, res) => {
+    const { org_id, name, domain, admin_email, admin_sub } = req.body || {};
+    if (typeof org_id !== 'string' || !ORG_ID_RE.test(org_id) || !name || !domain) {
+      throw new HttpError(400, 'org_id (organization:<slug>), name and domain are required');
+    }
+
+    let initialAdminSub = admin_sub;
+    if (!initialAdminSub && admin_email) {
+      const { rows } = await pool.query('SELECT sub FROM user_profiles WHERE lower(email) = lower($1)', [admin_email.trim()]);
+      if (rows.length > 0) initialAdminSub = rows[0].sub;
+    }
+
+    if (!initialAdminSub) {
+      throw new HttpError(400, 'A valid admin_sub or admin_email of a signed-in user must be specified');
+    }
+
+    await withTx(async (client) => {
+      await client.query(
+        'INSERT INTO organizations (id, name, domain, is_active) VALUES ($1, $2, $3, TRUE)',
+        [org_id, name, domain]
+      );
+      // Assign the specified user as the tenant's initial admin
+      await client.query(
+        "INSERT INTO tenant_memberships (user_sub, org_id, role) VALUES ($1, $2, 'admin')",
+        [initialAdminSub, org_id]
+      );
+      // Link organization to platform:root for super_admin inheritance
+      await outbox(client, 'PLATFORM_LINKED', {
+        action: 'WRITE', user: 'platform:root', relation: 'platform', object: org_id
+      });
+      // Activate tenant wildcard
+      await outbox(client, 'TENANT_PROVISIONED', {
+        action: 'WRITE', user: 'user:*', relation: 'tenant_active', object: org_id
+      });
+      // Assign initial admin
+      await outbox(client, 'MEMBERSHIP_ASSIGNED', {
+        action: 'WRITE', user: `user:${initialAdminSub}`, relation: 'admin', object: org_id
+      });
     });
-    await outbox(client, 'MEMBERSHIP_ASSIGNED', {
-      action: 'WRITE', user: `user:${req.user.sub}`, relation: 'admin', object: org_id
-    });
-  });
 
-  res.status(201).json({ message: 'Tenant organization registered', org_id });
-}));
+    res.status(201).json({ message: 'Tenant organization registered by platform admin', org_id, admin_sub: initialAdminSub });
+  })
+);
 
-// Instant tenant-wide kill switch: removes wildcard tenant_active
+// Suspend tenant across platform (master admin only)
 app.patch('/api/orgs/:org_id/suspend',
   requireAuth,
-  requirePermission('org_admin', orgFromParams),
+  requirePermission('super_admin', () => 'platform:root'),
   wrap(async (req, res) => {
     const { org_id } = req.params;
     await withTx(async (client) => {
@@ -132,27 +185,52 @@ app.patch('/api/orgs/:org_id/suspend',
   })
 );
 
+// Reactivate tenant across platform (master admin only)
+app.patch('/api/orgs/:org_id/unsuspend',
+  requireAuth,
+  requirePermission('super_admin', () => 'platform:root'),
+  wrap(async (req, res) => {
+    const { org_id } = req.params;
+    await withTx(async (client) => {
+      const r = await client.query(
+        'UPDATE organizations SET is_active = TRUE WHERE id = $1 AND is_active = FALSE',
+        [org_id]
+      );
+      if (r.rowCount === 0) throw new HttpError(409, 'Organization not found or already active');
+      await outbox(client, 'TENANT_REINSTATED', {
+        action: 'WRITE', user: 'user:*', relation: 'tenant_active', object: org_id
+      });
+    });
+    res.json({ message: `Tenant ${org_id} reactivated across platform` });
+  })
+);
+
 // ----------------------------------------------------
-// Dashboard: who am I, and what can I do in each organization?
+// Dashboard: Identity & Overview
 // ----------------------------------------------------
 app.get('/api/me', requireAuth, wrap(async (req, res) => {
   await ensureProfile(req.user);
-  const { rows } = await pool.query(
-    `SELECT m.org_id, o.name, m.role, m.is_suspended, o.is_active
-       FROM tenant_memberships m
-       JOIN organizations o ON o.id = m.org_id
-      WHERE m.user_sub = $1
-      ORDER BY o.name`,
-    [req.user.sub]
-  );
+  const [isSuperAdmin, memRes] = await Promise.all([
+    checkPermission(req.user.sub, 'super_admin', 'platform:root'),
+    pool.query(
+      `SELECT m.org_id, o.name, m.role, m.is_suspended, o.is_active
+         FROM tenant_memberships m
+         JOIN organizations o ON o.id = m.org_id
+        WHERE m.user_sub = $1
+        ORDER BY o.name`,
+      [req.user.sub]
+    )
+  ]);
+
   res.json({
     user: {
       sub: req.user.sub,
       email: req.user.email || null,
       name: req.user.name || req.user.preferred_username || null,
-      session_id: req.user.sid || null
+      session_id: req.user.sid || null,
+      is_super_admin: isSuperAdmin
     },
-    orgs: rows
+    orgs: memRes.rows
   });
 }));
 
@@ -170,8 +248,6 @@ app.get('/api/orgs/:org_id/overview', requireAuth, wrap(async (req, res) => {
     throw new HttpError(403, 'Not a member of this organization');
   }
 
-  // Authoritative decisions come from OpenFGA; the database values are shown alongside
-  // so the UI can tell when the outbox has not yet synced a change.
   const [orgAdmin, orgInstructor, orgLearner, fgaSuspended, fgaTenantActive] = await Promise.all([
     checkPermission(sub, 'org_admin', org_id),
     checkPermission(sub, 'org_instructor', org_id),
@@ -281,14 +357,14 @@ app.get('/api/orgs/:org_id/courses/:course_id/trace', requireAuth, wrap(async (r
 }));
 
 // ----------------------------------------------------
-// M4: Role Management & User Suspension (org admins only)
+// Member Management & Organization Session Revocation
 // ----------------------------------------------------
 app.get('/api/orgs/:org_id/members',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
     const { rows } = await pool.query(
-      `SELECT m.user_sub, p.email, p.first_name, p.last_name, m.role, m.is_suspended, m.created_at
+      `SELECT m.user_sub, p.email, p.first_name, p.last_name, m.role, m.is_suspended, m.session_revoked_at, m.created_at
          FROM tenant_memberships m
          JOIN user_profiles p ON p.sub = m.user_sub
         WHERE m.org_id = $1
@@ -344,7 +420,7 @@ app.patch('/api/orgs/:org_id/members/:user_sub/role',
 
     const changed = await withTx(async (client) => {
       const { rows } = await client.query(
-        'SELECT role, is_suspended FROM tenant_memberships WHERE user_sub = $1 AND org_id = $2 FOR UPDATE',
+        'SELECT role, is_suspended, session_revoked_at FROM tenant_memberships WHERE user_sub = $1 AND org_id = $2 FOR UPDATE',
         [user_sub, org_id]
       );
       if (rows.length === 0) throw new HttpError(404, 'Member not found');
@@ -368,8 +444,8 @@ app.patch('/api/orgs/:org_id/members/:user_sub/role',
       }
       if (!current.includes(role)) {
         await client.query(
-          'INSERT INTO tenant_memberships (user_sub, org_id, role, is_suspended) VALUES ($1, $2, $3, $4)',
-          [user_sub, org_id, role, rows[0].is_suspended]
+          'INSERT INTO tenant_memberships (user_sub, org_id, role, is_suspended, session_revoked_at) VALUES ($1, $2, $3, $4, $5)',
+          [user_sub, org_id, role, rows[0].is_suspended, rows[0].session_revoked_at]
         );
         await outbox(client, 'ROLE_ASSIGNED', {
           action: 'WRITE', user: `user:${user_sub}`, relation: role, object: org_id
@@ -423,6 +499,28 @@ app.patch('/api/orgs/:org_id/members/:user_sub/unsuspend',
   })
 );
 
+// Organization-scoped session revocation (Force re-login in this org only)
+app.post('/api/orgs/:org_id/members/:user_sub/revoke-session',
+  requireAuth,
+  requirePermission('org_admin', orgFromParams),
+  wrap(async (req, res) => {
+    const { org_id, user_sub } = req.params;
+
+    const result = await pool.query(
+      `UPDATE tenant_memberships 
+          SET session_revoked_at = NOW() 
+        WHERE org_id = $1 AND user_sub = $2`,
+      [org_id, user_sub]
+    );
+
+    if (result.rowCount === 0) {
+      throw new HttpError(404, 'Member not found in this organization');
+    }
+
+    res.json({ message: `Active sessions for user ${user_sub} revoked in ${org_id}` });
+  })
+);
+
 app.delete('/api/orgs/:org_id/members/:user_sub',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
@@ -456,7 +554,7 @@ app.delete('/api/orgs/:org_id/members/:user_sub',
 );
 
 // ----------------------------------------------------
-// Domain Resource APIs (Courses protected by OpenFGA ReBAC)
+// Courses
 // ----------------------------------------------------
 app.post('/api/courses',
   requireAuth,
@@ -471,7 +569,6 @@ app.post('/api/courses',
         'INSERT INTO courses (id, org_id, title, description) VALUES ($1, $2, $3, $4)',
         [course_id, org_id, title, description || null]
       );
-      // Link course to organization in OpenFGA
       await outbox(client, 'COURSE_CREATED', {
         action: 'WRITE', user: org_id, relation: 'org', object: course_id
       });
@@ -492,7 +589,7 @@ app.get('/api/courses/:course_id',
 );
 
 // ----------------------------------------------------
-// M3: Session Revocation
+// Global Self Session Revocation
 // ----------------------------------------------------
 app.post('/api/auth/revoke-session', requireAuth, async (req, res) => {
   const { sid, sub, exp } = req.user;
@@ -514,11 +611,10 @@ app.post('/api/auth/revoke-session', requireAuth, async (req, res) => {
 });
 
 // ----------------------------------------------------
-// M6: Audit Export API (scoped to one organization, admins only)
+// Audit Export API (Tenant Org Admins Only)
 // ----------------------------------------------------
 function csvCell(value) {
   let s = value === null || value === undefined ? '' : String(value);
-  // Neutralize spreadsheet formula injection.
   if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return `"${s.replace(/"/g, '""')}"`;
 }

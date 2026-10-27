@@ -3,8 +3,18 @@ model
 
 type user
 
+type platform
+  relations
+    define super_admin: [user]
+
 type organization
   relations
+    # Platform governance
+    define platform: [platform]
+    define super_admin: super_admin from platform
+    define can_manage: super_admin
+
+    # Existing tenant roles & lifecycle (unchanged)
     define admin: [user]
     define instructor: [user]
     define learner: [user]

@@ -15,19 +15,37 @@ const fgaClient = new OpenFgaClient({
 /**
  * Checks ReBAC permissions in OpenFGA
  */
+
 async function checkRelation(user, relation, objectId) {
   try {
-    const { allowed } = await fgaClient.check({
+    const result = await fgaClient.check({
       user,
       relation,
-      object: objectId
+      object: objectId,
     });
-    return !!allowed;
+
+    console.log('[OpenFGA check]', {
+      user,
+      relation,
+      object: objectId,
+      allowed: result.allowed,
+    });
+
+    return result.allowed === true;
   } catch (error) {
-    console.error('OpenFGA Check Error:', error);
-    return false;
+    console.error('[OpenFGA check failed]', {
+      user,
+      relation,
+      object: objectId,
+      message: error.message,
+      status: error.statusCode,
+      response: error.response?.data,
+    });
+
+    throw error;
   }
 }
+
 
 async function checkPermission(userSub, relation, objectId) {
   return checkRelation(`user:${userSub}`, relation, objectId);

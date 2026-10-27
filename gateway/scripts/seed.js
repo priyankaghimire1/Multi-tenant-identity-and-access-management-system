@@ -6,6 +6,10 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL
 });
 
+const FGA_API_URL = process.env.FGA_API_URL || 'http://openfga:8080';
+const FGA_STORE_ID = process.env.FGA_STORE_ID;
+const SUPER_ADMIN_SUB = process.env.SUPER_ADMIN_SUB || 'super-admin-000';
+
 // Subjects match the fixed user ids in keycloak/realm/multitenant-realm.json
 const USERS = [
   { sub: 'super-admin-000', email: 'master@platform.local', first: 'Platform', last: 'Admin' },
@@ -35,13 +39,53 @@ const ORGS = [
   }
 ];
 
+// Helper to write tuples directly to OpenFGA
+async function writeFgaTupleDirectly(user, relation, object) {
+  if (!FGA_STORE_ID) {
+    console.warn("No FGA_STORE_ID set, skipping direct OpenFGA write.");
+    return;
+  }
+  const res = await fetch(`${FGA_API_URL}/stores/${FGA_STORE_ID}/write`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      writes: { tuple_keys: [{ user, relation, object }] }
+    })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    // Ignore "already exists" errors on multiple runs
+    if (!text.includes('already exists')) {
+      console.error(`Failed to write tuple ${user} ${relation} ${object}:`, text);
+    }
+  }
+}
+
 async function seed() {
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    console.log('Seeding organizations, platform root, users, memberships and courses...');
+    // Wait for the database tables to be created by init.sql
+    let retries = 30;
+    while (retries > 0) {
+      try {
+        await client.query('SELECT 1 FROM user_profiles LIMIT 1');
+        break; // It worked! Tables exist.
+      } catch (err) {
+        if (err.code === '42P01') { // Undefined table
+          console.log('Waiting for database tables (init.sql)...');
+          await new Promise(r => setTimeout(r, 1000));
+          retries--;
+        } else {
+          throw err;
+        }
+      }
+    }
+    if (retries === 0) throw new Error('Database tables not found after 30s');
 
-    // 1. Ensure user profiles
+    await client.query('BEGIN');
+    console.log('Seeding database and OpenFGA...');
+
+    // 1. User profiles (idempotent)
     for (const u of USERS) {
       await client.query(
         `INSERT INTO user_profiles (sub, email, first_name, last_name)
@@ -50,96 +94,49 @@ async function seed() {
       );
     }
 
-    const outbox = (type, payload) =>
-      client.query('INSERT INTO outbox_events (event_type, payload) VALUES ($1, $2)', [type, payload]);
+    // 2. Seed super_admin directly to OpenFGA
+    console.log(`Assigning super_admin on platform:root to user:${SUPER_ADMIN_SUB}`);
+    await writeFgaTupleDirectly(`user:${SUPER_ADMIN_SUB}`, 'super_admin', 'platform:root');
 
-    // 2. Seed platform:root super_admin relation (idempotent check via outbox_events table)
-    const { rows: platformEventRows } = await client.query(
-      `SELECT 1 FROM outbox_events 
-       WHERE payload->>'user' = 'user:super-admin-000' 
-         AND payload->>'relation' = 'super_admin' 
-         AND payload->>'object' = 'platform:root' 
-       LIMIT 1`
-    );
-
-    if (platformEventRows.length === 0) {
-      console.log('Assigning super_admin on platform:root to user:super-admin-000...');
-      await outbox('PLATFORM_SUPER_ADMIN', {
-        action: 'WRITE',
-        user: 'user:super-admin-000',
-        relation: 'super_admin',
-        object: 'platform:root'
-      });
-    } else {
-      console.log('platform:root super_admin already seeded, skipping.');
-    }
-
-    // 3. Seed Organizations, Members, Courses, and Platform Links
+    // 3. Organizations, platform links, members, courses
     for (const org of ORGS) {
-      const inserted = await client.query(
+      await client.query(
         `INSERT INTO organizations (id, name, domain, is_active)
-         VALUES ($1, $2, $3, TRUE) ON CONFLICT DO NOTHING RETURNING id`,
+         VALUES ($1, $2, $3, TRUE) ON CONFLICT DO NOTHING`,
         [org.id, org.name, org.domain]
       );
 
-      if (inserted.rowCount === 0) {
-        console.log(`${org.id} already seeded, skipping`);
-        continue; // re-running must not enqueue duplicate tuple writes
-      }
+      await writeFgaTupleDirectly('platform:root', 'platform', org.id);
+      await writeFgaTupleDirectly('user:*', 'tenant_active', org.id);
 
-      // Link organization to platform:root for super_admin inheritance
-      await outbox('PLATFORM_LINKED', {
-        action: 'WRITE',
-        user: 'platform:root',
-        relation: 'platform',
-        object: org.id
-      });
-
-      // Wildcard active status
-      await outbox('TENANT_ACTIVE', {
-        action: 'WRITE',
-        user: 'user:*',
-        relation: 'tenant_active',
-        object: org.id
-      });
-
-      // Memberships
       for (const [sub, role] of org.members) {
         await client.query(
-          'INSERT INTO tenant_memberships (user_sub, org_id, role) VALUES ($1, $2, $3)',
+          `INSERT INTO tenant_memberships (user_sub, org_id, role)
+           VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
           [sub, org.id, role]
         );
-        await outbox('ROLE_' + role.toUpperCase(), {
-          action: 'WRITE',
-          user: `user:${sub}`,
-          relation: role,
-          object: org.id
-        });
+        await writeFgaTupleDirectly(`user:${sub}`, role, org.id);
       }
 
-      // Courses
       for (const [id, title, description] of org.courses) {
         await client.query(
-          'INSERT INTO courses (id, org_id, title, description) VALUES ($1, $2, $3, $4)',
+          `INSERT INTO courses (id, org_id, title, description)
+           VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
           [id, org.id, title, description]
         );
-        await outbox('COURSE_BIND', {
-          action: 'WRITE',
-          user: org.id,
-          relation: 'org',
-          object: id
-        });
+        await writeFgaTupleDirectly(org.id, 'org', id);
       }
     }
 
     await client.query('COMMIT');
-    console.log('Database seeded successfully.');
+    console.log('Seed complete. All tuples written directly to OpenFGA.');
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Seed failed:', err);
+    process.exit(1);
   } finally {
     client.release();
-    pool.end();
+    await pool.end();
   }
 }
 

@@ -97,6 +97,13 @@ function requirePermission(relation, getObjectId) {
           }
         }
       }
+      console.log('[AUTHZ DEBUG]', {
+  userSub: req.user.sub,
+  relation,
+  objectId,
+  orgId
+});
+
 
       const allowed = await checkPermission(userSub, relation, objectId);
       await recordAudit(req, relation, objectId, allowed);

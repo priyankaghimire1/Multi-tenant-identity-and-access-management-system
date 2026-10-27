@@ -9,6 +9,9 @@
     {
       "type": "organization",
       "relations": {
+        "platform": {
+          "this": {}
+        },
         "admin": {
           "this": {}
         },
@@ -26,192 +29,94 @@
         },
         "live_admin": {
           "difference": {
-            "base": {
-              "computedUserset": {
-                "relation": "admin"
-              }
-            },
-            "subtract": {
-              "computedUserset": {
-                "relation": "suspended"
-              }
-            }
+            "base": { "computedUserset": { "relation": "admin" } },
+            "subtract": { "computedUserset": { "relation": "suspended" } }
           }
         },
         "live_instructor": {
           "difference": {
-            "base": {
-              "computedUserset": {
-                "relation": "instructor"
-              }
-            },
-            "subtract": {
-              "computedUserset": {
-                "relation": "suspended"
-              }
-            }
+            "base": { "computedUserset": { "relation": "instructor" } },
+            "subtract": { "computedUserset": { "relation": "suspended" } }
           }
         },
         "live_learner": {
           "difference": {
-            "base": {
-              "computedUserset": {
-                "relation": "learner"
-              }
-            },
-            "subtract": {
-              "computedUserset": {
-                "relation": "suspended"
-              }
-            }
+            "base": { "computedUserset": { "relation": "learner" } },
+            "subtract": { "computedUserset": { "relation": "suspended" } }
           }
         },
         "org_admin": {
           "intersection": {
             "child": [
-              {
-                "computedUserset": {
-                  "relation": "live_admin"
-                }
-              },
-              {
-                "computedUserset": {
-                  "relation": "tenant_active"
-                }
-              }
+              { "computedUserset": { "relation": "live_admin" } },
+              { "computedUserset": { "relation": "tenant_active" } }
             ]
           }
         },
         "org_instructor": {
           "intersection": {
             "child": [
-              {
-                "computedUserset": {
-                  "relation": "live_instructor"
-                }
-              },
-              {
-                "computedUserset": {
-                  "relation": "tenant_active"
-                }
-              }
+              { "computedUserset": { "relation": "live_instructor" } },
+              { "computedUserset": { "relation": "tenant_active" } }
             ]
           }
         },
         "org_learner": {
           "intersection": {
             "child": [
-              {
-                "computedUserset": {
-                  "relation": "live_learner"
-                }
-              },
-              {
-                "computedUserset": {
-                  "relation": "tenant_active"
-                }
-              }
+              { "computedUserset": { "relation": "live_learner" } },
+              { "computedUserset": { "relation": "tenant_active" } }
             ]
           }
         },
         "org_member": {
           "union": {
             "child": [
-              {
-                "computedUserset": {
-                  "relation": "org_admin"
-                }
-              },
-              {
-                "computedUserset": {
-                  "relation": "org_instructor"
-                }
-              },
-              {
-                "computedUserset": {
-                  "relation": "org_learner"
-                }
-              }
+              { "computedUserset": { "relation": "org_admin" } },
+              { "computedUserset": { "relation": "org_instructor" } },
+              { "computedUserset": { "relation": "org_learner" } }
             ]
           }
         }
       },
       "metadata": {
         "relations": {
+          "platform": {
+            "directly_related_user_types": [{ "type": "platform" }]
+          },
           "admin": {
-            "directly_related_user_types": [
-              {
-                "type": "user"
-              }
-            ]
+            "directly_related_user_types": [{ "type": "user" }]
           },
           "instructor": {
-            "directly_related_user_types": [
-              {
-                "type": "user"
-              }
-            ]
+            "directly_related_user_types": [{ "type": "user" }]
           },
           "learner": {
-            "directly_related_user_types": [
-              {
-                "type": "user"
-              }
-            ]
+            "directly_related_user_types": [{ "type": "user" }]
           },
           "suspended": {
-            "directly_related_user_types": [
-              {
-                "type": "user"
-              }
-            ]
+            "directly_related_user_types": [{ "type": "user" }]
           },
           "tenant_active": {
-            "directly_related_user_types": [
-              {
-                "type": "user",
-                "wildcard": {}
-              }
-            ]
+            "directly_related_user_types": [{ "type": "user", "wildcard": {} }]
           },
-          "live_admin": {
-            "directly_related_user_types": []
-          },
-          "live_instructor": {
-            "directly_related_user_types": []
-          },
-          "live_learner": {
-            "directly_related_user_types": []
-          },
-          "org_admin": {
-            "directly_related_user_types": []
-          },
-          "org_instructor": {
-            "directly_related_user_types": []
-          },
-          "org_learner": {
-            "directly_related_user_types": []
-          },
-          "org_member": {
-            "directly_related_user_types": []
-          }
+          "live_admin": { "directly_related_user_types": [] },
+          "live_instructor": { "directly_related_user_types": [] },
+          "live_learner": { "directly_related_user_types": [] },
+          "org_admin": { "directly_related_user_types": [] },
+          "org_instructor": { "directly_related_user_types": [] },
+          "org_learner": { "directly_related_user_types": [] },
+          "org_member": { "directly_related_user_types": [] }
         }
       }
     },
     {
       "type": "course",
       "relations": {
-        "org": {
-          "this": {}
-        },
+        "org": { "this": {} },
         "can_view": {
           "tupleToUserset": {
-            "computedUserset": {
-              "relation": "org_member"
-            },
-            "tupleset": {
-              "relation": "org"
-            }
+            "computedUserset": { "relation": "org_member" },
+            "tupleset": { "relation": "org" }
           }
         },
         "can_edit": {
@@ -219,22 +124,14 @@
             "child": [
               {
                 "tupleToUserset": {
-                  "computedUserset": {
-                    "relation": "org_instructor"
-                  },
-                  "tupleset": {
-                    "relation": "org"
-                  }
+                  "computedUserset": { "relation": "org_instructor" },
+                  "tupleset": { "relation": "org" }
                 }
               },
               {
                 "tupleToUserset": {
-                  "computedUserset": {
-                    "relation": "org_admin"
-                  },
-                  "tupleset": {
-                    "relation": "org"
-                  }
+                  "computedUserset": { "relation": "org_admin" },
+                  "tupleset": { "relation": "org" }
                 }
               }
             ]
@@ -242,32 +139,35 @@
         },
         "can_delete": {
           "tupleToUserset": {
-            "computedUserset": {
-              "relation": "org_admin"
-            },
-            "tupleset": {
-              "relation": "org"
-            }
+            "computedUserset": { "relation": "org_admin" },
+            "tupleset": { "relation": "org" }
           }
         }
       },
       "metadata": {
         "relations": {
           "org": {
-            "directly_related_user_types": [
-              {
-                "type": "organization"
-              }
-            ]
+            "directly_related_user_types": [{ "type": "organization" }]
           },
-          "can_view": {
-            "directly_related_user_types": []
+          "can_view": { "directly_related_user_types": [] },
+          "can_edit": { "directly_related_user_types": [] },
+          "can_delete": { "directly_related_user_types": [] }
+        }
+      }
+    },
+    {
+      "type": "platform",
+      "relations": {
+        "super_admin": { "this": {} },
+        "root": { "this": {} }
+      },
+      "metadata": {
+        "relations": {
+          "super_admin": {
+            "directly_related_user_types": [{ "type": "user" }]
           },
-          "can_edit": {
-            "directly_related_user_types": []
-          },
-          "can_delete": {
-            "directly_related_user_types": []
+          "root": {
+            "directly_related_user_types": [{ "type": "organization" }]
           }
         }
       }

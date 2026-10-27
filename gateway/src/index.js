@@ -92,7 +92,14 @@ async function assertNotLastAdmin(client, org_id, user_sub) {
   }
 }
 
-const orgFromParams = (req) => req.params.org_id;
+const orgFromParams = (req) => {
+  const orgId = req.params.org_id;
+  if (!orgId) return null;
+
+  return orgId.startsWith('organization:')
+    ? orgId
+    : `organization:${orgId}`;
+};
 
 // ----------------------------------------------------
 // Platform Governance: Master Admin Only
@@ -235,7 +242,7 @@ app.get('/api/me', requireAuth, wrap(async (req, res) => {
 }));
 
 app.get('/api/orgs/:org_id/overview', requireAuth, wrap(async (req, res) => {
-  const { org_id } = req.params;
+  const org_id = orgFromParams(req);
   const sub = req.user.sub;
 
   const [orgRes, memRes] = await Promise.all([
@@ -306,7 +313,8 @@ app.get('/api/orgs/:org_id/overview', requireAuth, wrap(async (req, res) => {
 
 // Step-by-step explanation of why the caller can (or cannot) see a course.
 app.get('/api/orgs/:org_id/courses/:course_id/trace', requireAuth, wrap(async (req, res) => {
-  const { org_id, course_id } = req.params;
+  const org_id = orgFromParams(req);
+  const { course_id } = req.params;
   const sub = req.user.sub;
 
   const mem = await pool.query(
@@ -363,13 +371,14 @@ app.get('/api/orgs/:org_id/members',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
+    const org_id = orgFromParams(req); // <--- ADD THIS
     const { rows } = await pool.query(
       `SELECT m.user_sub, p.email, p.first_name, p.last_name, m.role, m.is_suspended, m.session_revoked_at, m.created_at
          FROM tenant_memberships m
          JOIN user_profiles p ON p.sub = m.user_sub
         WHERE m.org_id = $1
         ORDER BY p.email`,
-      [req.params.org_id]
+      [org_id] // <--- CHANGE THIS from req.params.org_id to org_id
     );
     res.json(rows);
   })
@@ -379,7 +388,7 @@ app.post('/api/orgs/:org_id/memberships',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
-    const { org_id } = req.params;
+    const org_id = orgFromParams(req);
     const { user_sub, email, role } = req.body || {};
     if (!ROLES.includes(role)) throw new HttpError(400, `role must be one of: ${ROLES.join(', ')}`);
 
@@ -414,7 +423,8 @@ app.patch('/api/orgs/:org_id/members/:user_sub/role',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
-    const { org_id, user_sub } = req.params;
+    const org_id = orgFromParams(req);
+    const { user_sub } = req.params;
     const { role } = req.body || {};
     if (!ROLES.includes(role)) throw new HttpError(400, `role must be one of: ${ROLES.join(', ')}`);
 
@@ -462,7 +472,8 @@ app.patch('/api/orgs/:org_id/members/:user_sub/suspend',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
-    const { org_id, user_sub } = req.params;
+    const org_id = orgFromParams(req);
+    const { user_sub } = req.params;
     if (user_sub === req.user.sub) throw new HttpError(400, 'You cannot suspend yourself');
 
     await withTx(async (client) => {
@@ -483,7 +494,8 @@ app.patch('/api/orgs/:org_id/members/:user_sub/unsuspend',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
-    const { org_id, user_sub } = req.params;
+    const org_id = orgFromParams(req);
+    const { user_sub } = req.params;
 
     await withTx(async (client) => {
       const r = await client.query(
@@ -504,7 +516,8 @@ app.post('/api/orgs/:org_id/members/:user_sub/revoke-session',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
-    const { org_id, user_sub } = req.params;
+    const org_id = orgFromParams(req);
+    const { user_sub } = req.params;
 
     const result = await pool.query(
       `UPDATE tenant_memberships 
@@ -525,7 +538,8 @@ app.delete('/api/orgs/:org_id/members/:user_sub',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
-    const { org_id, user_sub } = req.params;
+    const org_id = orgFromParams(req);
+    const { user_sub } = req.params;
     if (user_sub === req.user.sub) throw new HttpError(400, 'You cannot remove yourself');
 
     await withTx(async (client) => {
@@ -623,11 +637,12 @@ app.get('/api/orgs/:org_id/audit-logs',
   requireAuth,
   requirePermission('org_admin', orgFromParams),
   wrap(async (req, res) => {
+    const org_id = orgFromParams(req);
     const format = req.query.format || 'json';
     const limit = Math.min(parseInt(req.query.limit, 10) || 200, 1000);
     const decision = ['ALLOW', 'DENY'].includes(req.query.decision) ? req.query.decision : null;
 
-    const params = [req.params.org_id];
+    const params = [org_id];
     let where = 'org_id = $1';
     if (decision) {
       params.push(decision);

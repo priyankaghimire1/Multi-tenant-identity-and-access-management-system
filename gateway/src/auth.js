@@ -77,6 +77,22 @@ function requirePermission(relation, getObjectId) {
       const userSub = req.user.sub;
       const orgId = await resolveOrgId(objectId);
 
+      // Federation / org-hint enforcement
+      // If the token was issued via a federated IdP, the IdP mapper writes
+      // `org_hint` into the token. Reject any request where the hint does
+      // not match the org being accessed — this blocks cross-org use of a
+      // federated session (M7: malformed federation claims denied).
+      if (orgId && req.user.idp) {
+        const hint = req.user.org_hint;
+        const orgSlug = orgId.replace(/^organization:/, '');
+        if (hint && hint !== orgSlug) {
+          await recordAudit(req, relation, objectId, false);
+          return res.status(401).json({
+            error: 'federation / org mismatch',
+          });
+        }
+      }
+
       // Organization-scoped session revocation cutoff check
       if (orgId && req.user.iat) {
         const { rows } = await pool.query(

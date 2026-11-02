@@ -2,1008 +2,798 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IAM Dashboard</title>
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --card-border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #38bdf8;
-      --primary-hover: #0284c7;
-      --danger: #ef4444;
-      --danger-hover: #dc2626;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --input-bg: #0f172a;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
-    header { background-color: var(--card-bg); border-bottom: 1px solid var(--card-border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-    .header-left { display: flex; align-items: center; gap: 1.5rem; }
-    .header-right { display: flex; align-items: center; gap: 1rem; }
-    select, input, button { background: var(--input-bg); color: var(--text); border: 1px solid var(--card-border); padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.875rem; }
-    button { cursor: pointer; transition: background 0.15s ease; background-color: #334155; }
-    button:hover { background-color: #475569; }
-    button.primary { background-color: var(--primary); color: #0f172a; font-weight: 600; border: none; }
-    button.primary:hover { background-color: var(--primary-hover); }
-    button.danger { background-color: var(--danger); color: #fff; border: none; }
-    button.danger:hover { background-color: var(--danger-hover); }
-    main { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
-    .status-bar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .chip { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; }
-    .chip.admin { background: #3b82f633; color: #60a5fa; border: 1px solid #3b82f666; }
-    .chip.instructor { background: #8b5cf633; color: #a78bfa; border: 1px solid #8b5cf666; }
-    .chip.learner { background: #10b98133; color: #34d399; border: 1px solid #10b98166; }
-    .chip.none { background: #64748b33; color: #94a3b8; border: 1px solid #64748b66; }
-    .chip.active { background: #10b98122; color: #34d399; }
-    .chip.suspended { background: #ef444422; color: #f87171; }
-    .chip.syncing { background: #f59e0b22; color: #fbbf24; }
-    .tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--card-border); margin-bottom: 1.5rem; }
-    .tab-btn { background: none; border: none; padding: 0.75rem 1rem; color: var(--text-muted); font-size: 0.95rem; border-bottom: 2px solid transparent; border-radius: 0; }
-    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-tile { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.25rem; }
-    .stat-val { font-size: 2rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
-    th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--card-border); }
-    th { color: var(--text-muted); font-weight: 600; }
-    .pill { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; }
-    .pill.yes { background: #10b98133; color: #34d399; }
-    .pill.no { background: #ef444433; color: #f87171; }
-    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #0284c7; color: #fff; padding: 0.75rem 1.25rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000; font-size: 0.875rem; }
-    /* Drawer */
-    .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: flex-end; z-index: 50; }
-    .drawer-content { width: 450px; max-width: 90vw; background: var(--card-bg); height: 100%; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
-    .step-item { display: flex; gap: 1rem; padding: 0.75rem; border-radius: 6px; background: #0f172a; margin-bottom: 0.5rem; border-left: 4px solid var(--card-border); }
-    .step-item.pass { border-left-color: var(--success); }
-    .step-item.fail { border-left-color: var(--danger); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM Multi-Tenant Portal</title>
+<style>
+  :root {
+    --bg:#0b1020; --bg2:#0f172a; --panel:#131c31; --panel2:#18233d; --border:#243049; --border2:#2f3d5c;
+    --text:#e8edf7; --muted:#8b9ab5; --primary:#5eb5ff; --primary-d:#3b95e6; --accent:#a78bfa;
+    --danger:#f4646e; --success:#34d399; --warn:#fbbf24; --radius:12px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:radial-gradient(1200px 600px at 80% -10%, #1a2750 0%, transparent 60%), var(--bg); color:var(--text); min-height:100vh; display:flex; font-size:14px; line-height:1.45; }
+  #app { display:flex; width:100%; min-height:100vh; }
+  ::-webkit-scrollbar { width:8px; height:8px } ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:8px }
+
+  /* Sidebar */
+  .sidebar { width:252px; flex-shrink:0; background:rgba(15,23,42,.85); backdrop-filter:blur(8px); border-right:1px solid var(--border); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; }
+  .brand { display:flex; align-items:center; gap:.65rem; padding:1.25rem 1.25rem 1rem; font-weight:700; font-size:1.05rem; letter-spacing:.2px; }
+  .logo { width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,var(--primary),var(--accent)); display:grid; place-items:center; color:#0b1020; font-weight:800; }
+  .org-selector { padding:.25rem 1rem 1rem; }
+  .label { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:600; margin-bottom:.4rem; display:block; }
+  .nav { flex:1; padding:.25rem .75rem; overflow-y:auto; }
+  .nav-section { margin:.9rem .5rem .35rem; font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:600; }
+  .nav-btn { display:flex; align-items:center; gap:.7rem; width:100%; text-align:left; padding:.6rem .75rem; background:none; border:none; border-radius:9px; color:var(--muted); font-size:.9rem; cursor:pointer; transition:.15s; margin-bottom:2px; }
+  .nav-btn svg { width:17px; height:17px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-btn:hover { background:#ffffff0a; color:var(--text); }
+  .nav-btn.active { background:linear-gradient(90deg,#5eb5ff22,#5eb5ff08); color:var(--primary); font-weight:600; box-shadow:inset 2px 0 0 var(--primary); }
+  .user-profile { padding:1rem; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:.7rem; }
+  .user-row { display:flex; align-items:center; gap:.65rem; min-width:0; }
+  .avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); color:#0b1020; font-weight:700; display:grid; place-items:center; flex-shrink:0; }
+  .user-email { font-size:.8rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .user-role { font-size:.7rem; color:var(--muted); }
+
+  /* Main */
+  .main { flex:1; min-width:0; padding:2rem 2.25rem 3rem; max-width:1400px; margin:0 auto; }
+  .page-head { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+  h1 { font-size:1.65rem; font-weight:700; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin-top:.25rem; }
+  h2 { font-size:1.05rem; font-weight:600; margin-bottom:1rem; }
+  h3 { font-size:.9rem; font-weight:600; }
+
+  .card { background:linear-gradient(180deg,var(--panel),#101a2e); border:1px solid var(--border); border-radius:var(--radius); padding:1.35rem; margin-bottom:1.25rem; }
+  .grid-2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.25rem; }
+  .grid-3 { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:1.25rem; }
+  .stat { display:flex; flex-direction:column; gap:.3rem; }
+  .stat .n { font-size:2.4rem; font-weight:700; background:linear-gradient(135deg,var(--primary),var(--accent)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+  /* Controls */
+  button { font:inherit; cursor:pointer; border-radius:8px; transition:.15s; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .btn-primary { background:linear-gradient(135deg,var(--primary),var(--primary-d)); color:#04101f; font-weight:600; border:none; padding:.55rem 1.1rem; }
+  .btn-primary:hover:not(:disabled) { filter:brightness(1.1); transform:translateY(-1px); }
+  .btn-secondary { background:var(--panel2); color:var(--text); border:1px solid var(--border2); padding:.5rem .95rem; }
+  .btn-secondary:hover:not(:disabled) { border-color:var(--primary); }
+  .btn-danger { background:#f4646e1f; color:#ff8f97; border:1px solid #f4646e55; padding:.5rem .95rem; }
+  .btn-danger:hover:not(:disabled) { background:var(--danger); color:#fff; }
+  .btn-sm { padding:.3rem .65rem; font-size:.8rem; }
+  input, select, textarea { width:100%; padding:.6rem .75rem; background:var(--bg2); border:1px solid var(--border); color:var(--text); border-radius:8px; font:inherit; outline:none; transition:.15s; }
+  input:focus, select:focus, textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px #5eb5ff22; }
+  textarea { font-family:var(--mono); font-size:.82rem; resize:vertical; min-height:110px; }
+  .form-row { display:flex; gap:.75rem; margin-bottom:.9rem; flex-wrap:wrap; }
+  .form-row > * { flex:1; min-width:150px; }
+  .field { display:flex; flex-direction:column; }
+
+  table { width:100%; border-collapse:collapse; font-size:.86rem; }
+  th, td { padding:.8rem .9rem; text-align:left; border-bottom:1px solid var(--border); vertical-align:middle; }
+  th { color:var(--muted); font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; }
+  tbody tr:hover { background:#ffffff05; }
+  .table-wrap { overflow-x:auto; }
+  .mono { font-family:var(--mono); font-size:.78rem; }
+  .muted { color:var(--muted); }
+
+  .badge { display:inline-block; padding:.2rem .55rem; border-radius:999px; font-size:.7rem; font-weight:600; }
+  .badge-success { background:#34d39922; color:#4ee0ae; } .badge-danger { background:#f4646e22; color:#ff8f97; }
+  .badge-info { background:#5eb5ff22; color:var(--primary); } .badge-warn { background:#fbbf2422; color:var(--warn); } .badge-purple { background:#a78bfa22; color:#c4b0ff; }
+
+  .course-card { display:flex; flex-direction:column; justify-content:space-between; margin:0; transition:.2s; }
+  .course-card:hover { border-color:var(--border2); transform:translateY(-2px); }
+  .course-title { font-size:1.05rem; font-weight:600; margin-bottom:.3rem; }
+  .perm-row { display:flex; gap:.4rem; margin-top:.9rem; flex-wrap:wrap; }
+  .perm { padding:.15rem .5rem; border-radius:6px; font-size:.72rem; font-weight:600; }
+  .perm.yes { background:#34d39920; color:#4ee0ae } .perm.no { background:#f4646e18; color:#ff8f97; text-decoration:line-through; opacity:.8 }
+
+  .toast-wrap { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:.5rem; z-index:3000; }
+  .toast { padding:.8rem 1.1rem; border-radius:10px; background:var(--panel2); border:1px solid var(--border2); border-left:4px solid var(--primary); box-shadow:0 8px 24px #0008; animation:slide .25s ease; max-width:360px; }
+  .toast.error { border-left-color:var(--danger) } .toast.success { border-left-color:var(--success) }
+  @keyframes slide { from { transform:translateX(30px); opacity:0 } to { transform:none; opacity:1 } }
+
+  .banner { padding:.8rem 1rem; border-radius:10px; background:#fbbf2414; border:1px solid #fbbf2440; color:#fcd36b; margin-bottom:1.25rem; font-size:.85rem; }
+  .info-box { padding:.8rem 1rem; border-radius:10px; background:#5eb5ff12; border:1px solid #5eb5ff33; color:#b8dcff; font-size:.84rem; }
+
+  /* Console */
+  .console { display:grid; grid-template-columns:330px 1fr; gap:1.25rem; align-items:start; }
+  @media (max-width:1000px) { .console { grid-template-columns:1fr } }
+  .ep-list { max-height:72vh; overflow-y:auto; padding:.5rem; }
+  .ep-group { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); padding:.7rem .6rem .3rem; font-weight:600; }
+  .ep { display:flex; align-items:center; gap:.6rem; width:100%; text-align:left; background:none; border:1px solid transparent; color:var(--text); padding:.5rem .6rem; border-radius:8px; }
+  .ep:hover { background:#ffffff08 } .ep.active { background:#5eb5ff14; border-color:#5eb5ff44; }
+  .ep .path { font-family:var(--mono); font-size:.74rem; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .method { font-family:var(--mono); font-size:.64rem; font-weight:700; padding:.15rem .4rem; border-radius:5px; min-width:46px; text-align:center; }
+  .m-GET { background:#34d39922; color:#4ee0ae } .m-POST { background:#5eb5ff22; color:var(--primary) } .m-PATCH { background:#fbbf2422; color:var(--warn) } .m-DELETE { background:#f4646e22; color:#ff8f97 }
+  .resp { background:#070b16; border:1px solid var(--border); border-radius:10px; padding:1rem; font-family:var(--mono); font-size:.78rem; max-height:420px; overflow:auto; white-space:pre-wrap; word-break:break-word; }
+  .status-pill { font-family:var(--mono); font-size:.78rem; font-weight:700; padding:.2rem .6rem; border-radius:6px; }
+  .st-ok { background:#34d39922; color:#4ee0ae } .st-err { background:#f4646e22; color:#ff8f97 }
+
+  /* Agents */
+  .scope-opt { display:flex; align-items:flex-start; gap:.65rem; padding:.7rem .85rem; border:1px solid var(--border); border-radius:10px; cursor:pointer; background:var(--bg2); }
+  .scope-opt:hover { border-color:var(--border2) } .scope-opt input { width:auto; margin-top:.2rem; }
+  .scope-opt.on { border-color:var(--primary); background:#5eb5ff10 }
+  .chips { display:flex; gap:.5rem; flex-wrap:wrap; }
+  .chip { padding:.4rem .85rem; border-radius:999px; border:1px solid var(--border2); background:var(--bg2); color:var(--muted); cursor:pointer; font-size:.82rem; }
+  .chip.on { background:var(--primary); color:#04101f; border-color:var(--primary); font-weight:600; }
+  .token-box { background:#070b16; border:1px dashed var(--border2); border-radius:10px; padding:.85rem; font-family:var(--mono); font-size:.72rem; word-break:break-all; color:#b8dcff; max-height:120px; overflow:auto; }
+  .countdown { font-family:var(--mono); font-weight:700; }
+
+  .drawer-bg { position:fixed; inset:0; background:rgba(3,6,14,.75); backdrop-filter:blur(3px); z-index:2000; display:flex; justify-content:flex-end; }
+  .drawer { width:480px; max-width:100%; background:var(--panel); height:100%; padding:1.75rem; overflow-y:auto; border-left:1px solid var(--border2); animation:slide .2s ease; }
+  .step { padding:.85rem 1rem; border-left:4px solid; background:var(--bg2); margin-bottom:.7rem; border-radius:0 10px 10px 0; }
+  .step.ok { border-color:var(--success) } .step.bad { border-color:var(--danger) }
+  .empty { text-align:center; padding:3rem 1rem; color:var(--muted); }
+  .center-screen { display:flex; min-height:100vh; width:100%; align-items:center; justify-content:center; padding:1rem; }
+</style>
 </head>
 <body>
-  <div id="app"></div>
+<div id="app"></div>
+<div class="toast-wrap" id="toasts"></div>
 
-  <script>
-    const CONFIG = {
-      keycloakUrl: 'http://localhost:8081',
-      realm: 'dat',
-      clientId: 'web-app',
-      redirectUri: window.location.origin + '/dashboard.html'
-    };
+<script>
+const CONFIG = { keycloakUrl:'http://localhost:8081', realm:'dat', clientId:'web-app', redirectUri: window.location.origin + '/dashboard.html' };
 
-    // DOM construction helper
-    function el(tag, props = {}, ...children) {
-      const element = document.createElement(tag);
-      for (const [k, v] of Object.entries(props)) {
-        if (k.startsWith('on') && typeof v === 'function') {
-          element.addEventListener(k.substring(2).toLowerCase(), v);
-        } else if (k === 'className') {
-          element.className = v;
-        } else if (k === 'dataset') {
-          Object.assign(element.dataset, v);
-        } else {
-          element.setAttribute(k, v);
-        }
+/* ---------- helpers ---------- */
+function el(tag, props = {}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.substring(2).toLowerCase(), v);
+    else if (k === 'className') e.className = v;
+    else if (k === 'value' || k === 'checked' || k === 'selected' || k === 'disabled') e[k] = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  const add = (c) => {
+    if (Array.isArray(c)) c.forEach(add);
+    else if (typeof c === 'string' || typeof c === 'number') e.appendChild(document.createTextNode(String(c)));
+    else if (c instanceof Node) e.appendChild(c);
+  };
+  children.forEach(add);
+  return e;
+}
+function toast(msg, type = 'info') {
+  const t = el('div', { className: `toast ${type}` }, msg);
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+const showToast = (m) => toast(m, 'success');
+async function errMsg(res) { try { return (await res.json()).error || res.statusText; } catch { return res.statusText; } }
+function copy(text) { navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard', 'success'), () => toast('Copy failed', 'error')); }
+const fmtDate = (d) => d ? new Date(d).toLocaleString() : '—';
+const icons = {
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .6 3.2 2.4 3.5 5.2"/>',
+  book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>',
+  log:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/>',
+  bot:'<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V4M9 13v1M15 13v1M2 13v3M22 13v3"/>',
+  term:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 10 3 2.5L7 15M13 15h4"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c.7-4 3.7-6 8-6s7.3 2 8 6"/>'
+};
+const icon = (n) => { const s = document.createElementNS('http://www.w3.org/2000/svg','svg'); s.setAttribute('viewBox','0 0 24 24'); s.innerHTML = icons[n] || ''; return s; };
+
+/* ---------- auth (PKCE) ---------- */
+function generateRandomString(len) { const a = new Uint8Array(len); crypto.getRandomValues(a); return Array.from(a, d => ('0' + d.toString(16)).slice(-2)).join(''); }
+async function generateCodeChallenge(v) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v));
+  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function startLogin(idpHint) {
+  const st = generateRandomString(16), verifier = generateRandomString(32);
+  sessionStorage.setItem('pkce_state', st); sessionStorage.setItem('pkce_verifier', verifier);
+  generateCodeChallenge(verifier).then(challenge => {
+    const p = { client_id:CONFIG.clientId, response_type:'code', scope:'openid email profile', redirect_uri:CONFIG.redirectUri, state:st, code_challenge:challenge, code_challenge_method:'S256' };
+    if (idpHint) p.kc_idp_hint = idpHint;
+    window.location.href = `${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/auth?` + new URLSearchParams(p);
+  });
+}
+const startFederatedLogin = () => startLogin('acme-okta');
+async function handleAuthCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code'), st = params.get('state');
+  if (!code || st !== sessionStorage.getItem('pkce_state')) return false;
+  window.history.replaceState({}, document.title, window.location.pathname);
+  const res = await fetch(`${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/token`, {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({ client_id:CONFIG.clientId, grant_type:'authorization_code', code, redirect_uri:CONFIG.redirectUri, code_verifier:sessionStorage.getItem('pkce_verifier') }).toString()
+  });
+  if (!res.ok) throw new Error('Token exchange failed');
+  const t = await res.json();
+  sessionStorage.setItem('access_token', t.access_token); sessionStorage.setItem('refresh_token', t.refresh_token); sessionStorage.setItem('id_token', t.id_token);
+  return true;
+}
+async function refreshAccessToken() {
+  const rt = sessionStorage.getItem('refresh_token'); if (!rt) return null;
+  const res = await fetch(`${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/token`, {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({ client_id:CONFIG.clientId, grant_type:'refresh_token', refresh_token:rt }).toString()
+  });
+  if (!res.ok) return null;
+  const t = await res.json(); sessionStorage.setItem('access_token', t.access_token); return t.access_token;
+}
+async function apiFetch(url, options = {}, retried = false) {
+  const token = sessionStorage.getItem('access_token');
+
+  if (!token) {
+    throw new Error('No authentication token');
+  }
+
+  options.headers = {
+    ...options.headers,
+    Authorization: `Bearer ${token}`
+  };
+
+  const res = await fetch(url, options);
+
+  if (res.status === 401 && !retried) {
+    if (await refreshAccessToken()) {
+      return apiFetch(url, options, true);
+    }
+
+    // Refresh failed: return the user to your login page.
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('id_token');
+
+    state.user = null;
+    renderAuth();
+
+    throw new Error('Session expired');
+  }
+
+  return res;
+}
+
+/* ---------- state ---------- */
+const state = { user:null, orgs:[], selectedOrgId:null, orgData:null, platformOrgs:null, unassignedUsers:null, auditLogs:null, auditFilter:'', view:'dashboard', consoleSel:0, consoleParams:{}, consoleBody:null, consoleResp:null, delegations:[], lastToken:null };
+const loadDelegations = () => { try { state.delegations = JSON.parse(sessionStorage.getItem('delegations') || '[]'); } catch { state.delegations = []; } };
+const saveDelegations = () => sessionStorage.setItem('delegations', JSON.stringify(state.delegations));
+const isSuper = () => !!state.user?.is_super_admin;
+const isOrgAdmin = () => state.orgData?.me?.role === 'admin';
+const canConsole = () => isSuper() || isOrgAdmin();
+
+/* ---------- API console catalogue ---------- */
+const ENDPOINTS = [
+  { g:'Identity', m:'GET', p:'/api/me', who:'any' },
+  { g:'Identity', m:'GET', p:'/api/orgs/{org_id}/overview', who:'any' },
+  { g:'Identity', m:'POST', p:'/api/auth/revoke-session', who:'any', danger:'This invalidates YOUR current session and signs you out.' },
+  { g:'Platform', m:'GET', p:'/api/admin/orgs', who:'super' },
+  { g:'Platform', m:'GET', p:'/api/admin/unassigned-users', who:'super' },
+  { g:'Platform', m:'POST', p:'/api/orgs', who:'super', body:{ org_id:'organization:acme', name:'Acme Inc', domain:'acme.com', admin_email:'admin@acme.com' } },
+  { g:'Platform', m:'PATCH', p:'/api/orgs/{org_id}/suspend', who:'super' },
+  { g:'Platform', m:'PATCH', p:'/api/orgs/{org_id}/unsuspend', who:'super' },
+  { g:'Members', m:'POST', p:'/api/orgs/{org_id}/memberships', who:'admin', body:{ email:'user@example.com', role:'learner' } },
+  { g:'Members', m:'PATCH', p:'/api/orgs/{org_id}/members/{user_sub}/role', who:'admin', body:{ role:'instructor' } },
+  { g:'Members', m:'PATCH', p:'/api/orgs/{org_id}/members/{user_sub}/suspend', who:'admin' },
+  { g:'Members', m:'PATCH', p:'/api/orgs/{org_id}/members/{user_sub}/unsuspend', who:'admin' },
+  { g:'Members', m:'DELETE', p:'/api/orgs/{org_id}/members/{user_sub}', who:'admin', danger:'Permanently removes the member from the organization.' },
+  { g:'Courses', m:'POST', p:'/api/courses', who:'admin', body:{ course_id:'course:cs101', org_id:'{org}', title:'Intro to CS', description:'' } },
+  { g:'Courses', m:'GET', p:'/api/courses/{course_id}', who:'any' },
+  { g:'Courses', m:'GET', p:'/api/orgs/{org_id}/courses/{course_id}/trace', who:'any' },
+  { g:'Agents', m:'POST', p:'/api/agents/delegate', who:'any', body:{ agent_id:'my-agent', org_id:'{org}', scopes:['course:read'], duration_minutes:30 } },
+  { g:'Audit', m:'GET', p:'/api/orgs/{org_id}/audit-logs?limit=50', who:'admin' },
+  { g:'Audit', m:'GET', p:'/api/orgs/{org_id}/audit-logs?format=csv&limit=200', who:'admin' }
+];
+const visibleEndpoints = () => ENDPOINTS.filter(e => e.who === 'any' || (e.who === 'admin' && canConsole()) || (e.who === 'super' && isSuper()));
+const pathParams = (p) => [...p.matchAll(/\{(\w+)\}/g)].map(m => m[1]).filter(k => k !== 'org');
+
+/* ---------- init ---------- */
+async function init() {
+  loadDelegations();
+
+  // Handle Keycloak's authorization callback.
+  if (window.location.search.includes('code=')) {
+    try {
+      await handleAuthCallback();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  }
+
+  // Check for an existing session.
+  let token = sessionStorage.getItem('access_token');
+
+  // Try refreshing if only the refresh token is available.
+  if (!token && sessionStorage.getItem('refresh_token')) {
+    token = await refreshAccessToken();
+  }
+
+  // No valid session: show our custom login page.
+  if (!token) {
+    renderAuth();
+    return;
+  }
+
+  try {
+    const res = await apiFetch('/api/me');
+
+    if (!res.ok) {
+      throw new Error('Failed to retrieve user information');
+    }
+
+    const data = await res.json();
+
+    state.user = data.user;
+    state.orgs = data.orgs || [];
+
+    if (state.orgs.length > 0) {
+      state.selectedOrgId = state.orgs[0].org_id;
+    }
+
+    if (isSuper()) {
+      state.view = 'platform';
+      await loadPlatformOrgs(false);
+
+      if (state.selectedOrgId) {
+        loadOrg();
+      } else {
+        render();
       }
-      for (const child of children) {
-        if (typeof child === 'string' || typeof child === 'number') {
-          element.appendChild(document.createTextNode(String(child)));
-        } else if (child instanceof Node) {
-          element.appendChild(child);
-        }
-      }
-      return element;
+    } else if (state.selectedOrgId) {
+      state.view = 'dashboard';
+      await loadOrg();
+    } else {
+      render();
     }
 
-    function showToast(msg) {
-      const toast = el('div', { className: 'toast' }, msg);
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+  } catch (e) {
+    console.error('Initialization error:', e);
+    renderAuth();
+  }
+}
+async function loadPlatformOrgs(r = true) { const res = await apiFetch('/api/admin/orgs'); if (res.ok) state.platformOrgs = await res.json(); if (r) render(); }
+async function loadUnassignedUsers() { const res = await apiFetch('/api/admin/unassigned-users'); if (res.ok) state.unassignedUsers = await res.json(); state.view = 'unassigned'; render(); }
+async function loadOrg() {
+  if (!state.selectedOrgId) return render();
+  const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/overview`);
+  if (res.ok) { state.orgData = await res.json(); if (state.orgData.sync && !state.orgData.sync.in_sync) setTimeout(loadOrg, 1500); }
+  else state.orgData = null;
+  render();
+}
+async function loadAudit() {
+  const q = state.auditFilter ? `&decision=${state.auditFilter}` : '';
+  const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/audit-logs?limit=200${q}`);
+  state.auditLogs = res.ok ? await res.json() : [];
+  if (!res.ok) toast(await errMsg(res), 'error');
+  render();
+}
+function go(view) { state.view = view; if (view === 'audit') { state.auditLogs = null; render(); loadAudit(); } else render(); }
+
+/* ---------- auth screen ---------- */
+function renderAuth() {
+  const app = document.getElementById('app'); app.innerHTML = '';
+  app.appendChild(el('div', { className:'center-screen' },
+    el('div', { className:'card', style:'text-align:center; width:420px; max-width:100%; padding:2.25rem;' },
+      el('div', { className:'logo', style:'width:52px;height:52px;margin:0 auto 1.25rem;font-size:1.4rem;border-radius:14px;' }, 'I'),
+      el('h1', { style:'font-size:1.6rem' }, 'IAM Portal'),
+      el('p', { className:'muted', style:'margin:.6rem 0 1.75rem;' }, 'Sign in to manage organizations, courses and AI access.'),
+      el('div', { style:'display:flex;flex-direction:column;gap:.7rem;' },
+        el('button', { className:'btn-primary', style:'padding:.75rem', onClick:() => startLogin() }, 'Sign in'),
+        el('button', { className:'btn-secondary', style:'padding:.75rem', onClick:startFederatedLogin }, 'Sign in with Acme Okta')))));
+}
+
+/* ---------- shell ---------- */
+function navBtn(view, label, ic, onClick) {
+  return el('button', { className:`nav-btn ${state.view === view ? 'active' : ''}`, onClick: onClick || (() => go(view)) }, icon(ic), label);
+}
+function render() {
+  const app = document.getElementById('app'); app.innerHTML = '';
+  if (!state.user) return renderAuth();
+  const role = state.orgData?.me?.role || null;
+  const initials = (state.user.email || state.user.name || '?').slice(0, 1).toUpperCase();
+
+  const nav = el('div', { className:'nav' });
+  if (isSuper()) {
+    nav.appendChild(el('div', { className:'nav-section' }, 'Platform'));
+    nav.appendChild(navBtn('platform', 'Tenants', 'globe'));
+    nav.appendChild(navBtn('unassigned', 'Unassigned users', 'user', loadUnassignedUsers));
+  }
+  if (state.selectedOrgId) {
+    nav.appendChild(el('div', { className:'nav-section' }, 'Organization'));
+    nav.appendChild(navBtn('dashboard', 'Dashboard', 'grid'));
+    if (role === 'admin') {
+      nav.appendChild(navBtn('members', 'Members', 'users'));
+      nav.appendChild(navBtn('courses', 'Courses', 'book'));
+      nav.appendChild(navBtn('audit', 'Audit logs', 'log'));
     }
+  }
+  nav.appendChild(el('div', { className:'nav-section' }, 'Access'));
+  nav.appendChild(navBtn('agents', 'AI access', 'bot'));
+  if (canConsole()) nav.appendChild(navBtn('console', 'API console', 'term'));
 
-    // PKCE Utilities
-    function generateRandomString(len) {
-      const array = new Uint8Array(len);
-      crypto.getRandomValues(array);
-      return Array.from(array, dec => ('0' + dec.toString(16)).substr(-2)).join('');
-    }
-
-    async function generateCodeChallenge(verifier) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(verifier);
-      const digest = await crypto.subtle.digest('SHA-256', data);
-      return btoa(String.fromCharCode(...new Uint8Array(digest)))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-    }
-
-    function startLogin() {
-      const state = generateRandomString(16);
-      const verifier = generateRandomString(32);
-      sessionStorage.setItem('pkce_state', state);
-      sessionStorage.setItem('pkce_verifier', verifier);
-
-      generateCodeChallenge(verifier).then(challenge => {
-        const url = `${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/auth?` +
-          new URLSearchParams({
-            client_id: CONFIG.clientId,
-            response_type: 'code',
-            scope: 'openid email profile',
-            redirect_uri: CONFIG.redirectUri,
-            state: state,
-            code_challenge: challenge,
-            code_challenge_method: 'S256'
-          });
-        window.location.href = url;
-      });
-    }
-
-    async function handleAuthCallback() {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      const state = params.get('state');
-      const savedState = sessionStorage.getItem('pkce_state');
-      const verifier = sessionStorage.getItem('pkce_verifier');
-
-      if (!code || state !== savedState) return false;
-
-      window.history.replaceState({}, document.title, window.location.pathname);
-      sessionStorage.removeItem('pkce_state');
-      sessionStorage.removeItem('pkce_verifier');
-
-      const body = new URLSearchParams({
-        client_id: CONFIG.clientId,
-        grant_type: 'authorization_code',
-        code: code,
-        redirect_uri: CONFIG.redirectUri,
-        code_verifier: verifier
-      });
-
-      const res = await fetch(`${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString()
-      });
-
-      if (!res.ok) throw new Error('Token exchange failed');
-      const tokens = await res.json();
-      sessionStorage.setItem('access_token', tokens.access_token);
-      sessionStorage.setItem('refresh_token', tokens.refresh_token);
-      return true;
-    }
-
-    async function refreshAccessToken() {
-      const refreshToken = sessionStorage.getItem('refresh_token');
-      if (!refreshToken) return null;
-
-      const body = new URLSearchParams({
-        client_id: CONFIG.clientId,
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken
-      });
-
-      try {
-        const res = await fetch(`${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: body.toString()
-        });
-        if (!res.ok) throw new Error('Refresh failed');
-        const tokens = await res.json();
-        sessionStorage.setItem('access_token', tokens.access_token);
-        if (tokens.refresh_token) sessionStorage.setItem('refresh_token', tokens.refresh_token);
-        return tokens.access_token;
-      } catch (e) {
+  const sidebar = el('div', { className:'sidebar' },
+    el('div', { className:'brand' }, el('div', { className:'logo' }, 'I'), 'IAM Portal'),
+    state.orgs.length > 0 ? el('div', { className:'org-selector' },
+      el('span', { className:'label' }, 'Organization'),
+      el('select', { onChange:(e) => { state.selectedOrgId = e.target.value; state.orgData = null; state.auditLogs = null; if (['members','courses','audit','console'].includes(state.view)) state.view = 'dashboard'; render(); loadOrg(); } },
+        ...state.orgs.map(o => el('option', { value:o.org_id, selected:o.org_id === state.selectedOrgId }, o.name)))) : null,
+    nav,
+    el('div', { className:'user-profile' },
+      el('div', { className:'user-row' }, el('div', { className:'avatar' }, initials),
+        el('div', { style:'min-width:0' }, el('div', { className:'user-email' }, state.user.email || state.user.name || state.user.sub),
+          el('div', { className:'user-role' }, isSuper() ? 'Super admin' : (role ? role : 'No role')))),
+      el('button', { className:'btn-secondary', onClick:() => {
+        const idToken = sessionStorage.getItem('id_token');
         sessionStorage.clear();
-        return null;
-      }
-    }
+        window.location.href = `${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/logout?` + new URLSearchParams({ post_logout_redirect_uri:CONFIG.redirectUri, id_token_hint:idToken || '' });
+      } }, 'Sign out')));
 
-    async function apiFetch(url, options = {}, retried = false) {
-      let token = sessionStorage.getItem('access_token');
-      if (!token) {
-        startLogin();
-        throw new Error('Not authenticated');
-      }
+  const main = el('div', { className:'main' });
+  const v = state.view;
+  if (v === 'platform') main.appendChild(renderPlatformAdmin());
+  else if (v === 'unassigned') main.appendChild(renderUnassignedUsersView());
+  else if (v === 'members') main.appendChild(renderMembersView());
+  else if (v === 'courses') main.appendChild(renderCoursesManagementView());
+  else if (v === 'audit') main.appendChild(renderAuditView());
+  else if (v === 'agents') main.appendChild(renderAgentsView());
+  else if (v === 'console') main.appendChild(renderConsole());
+  else {
+    if (!state.selectedOrgId) main.appendChild(renderEmptyState());
+    else if (!state.orgData) main.appendChild(el('div', { className:'empty' }, 'Loading organization data…'));
+    else if (!role) main.appendChild(renderSuspendedView());
+    else if (role === 'admin') main.appendChild(renderAdminDashboard());
+    else main.appendChild(renderUserDashboard());
+  }
+  app.appendChild(sidebar); app.appendChild(main);
+}
+const pageHead = (title, sub, ...actions) => el('div', { className:'page-head' }, el('div', {}, el('h1', {}, title), sub ? el('p', { className:'sub' }, sub) : null), el('div', { style:'display:flex;gap:.6rem' }, ...actions));
 
-      options.headers = options.headers || {};
-      options.headers['Authorization'] = `Bearer ${token}`;
+/* ---------- views ---------- */
+function renderEmptyState() {
+  return el('div', { className:'card empty', style:'max-width:560px;margin:4rem auto;' }, el('h2', {}, 'No organizations yet'), el('p', {}, 'You are not a member of any organization. Ask a platform admin to add you.'));
+}
+function renderSuspendedView() {
+  const ov = state.orgData; let reason = 'You do not have an active role in this organization.';
+  if (!ov.me.tenant_active) reason = 'This entire organization has been suspended by a Platform Admin.';
+  else if (ov.me.suspended) reason = 'Your membership has been suspended by an Org Admin.';
+  return el('div', { className:'card', style:'max-width:600px;margin:4rem auto;border-left:4px solid var(--danger);' }, el('h2', { style:'color:var(--danger)' }, 'Access revoked'), el('p', {}, reason));
+}
 
-      const res = await fetch(url, options);
-      if (res.status === 401 && !retried) {
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-          return apiFetch(url, options, true);
-        } else {
-          startLogin();
-          throw new Error('Session expired');
-        }
-      }
-      return res;
-    }
+function renderPlatformAdmin() {
+  const c = el('div');
+  c.appendChild(pageHead('Platform administration', 'Provision and govern every tenant on the platform.'));
+  c.appendChild(el('div', { className:'card' }, el('h2', {}, 'Provision new tenant'),
+    el('form', { onSubmit: async (e) => {
+      e.preventDefault(); const f = e.target; let orgId = f.org_id.value.trim();
+      if (!orgId.startsWith('organization:')) orgId = `organization:${orgId}`;
+      const res = await apiFetch('/api/orgs', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ org_id:orgId, name:f.name.value.trim(), domain:f.domain.value.trim(), admin_email:f.admin_email.value.trim() }) });
+      if (res.ok) { f.reset(); showToast('Tenant provisioned'); loadPlatformOrgs(); } else toast(await errMsg(res), 'error');
+    } },
+      el('div', { className:'form-row' }, el('input', { name:'org_id', placeholder:'org-slug (e.g. acme)', required:true }), el('input', { name:'name', placeholder:'Display name', required:true })),
+      el('div', { className:'form-row' }, el('input', { name:'domain', placeholder:'domain.com', required:true }), el('input', { name:'admin_email', placeholder:'Initial admin email', required:true })),
+      el('button', { className:'btn-primary', type:'submit' }, 'Provision tenant'))));
+  if (!state.platformOrgs) c.appendChild(el('div', { className:'empty' }, 'Loading tenants…'));
+  else c.appendChild(el('div', { className:'card' }, el('h2', {}, `All tenants (${state.platformOrgs.length})`),
+    el('div', { className:'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, ...['ID','Name','Domain','Status','Members','Courses','Actions'].map(h => el('th', {}, h)))),
+      el('tbody', {}, ...state.platformOrgs.map(o => el('tr', {},
+        el('td', { className:'mono' }, o.id), el('td', {}, o.name), el('td', { className:'muted' }, o.domain),
+        el('td', {}, el('span', { className:`badge ${o.is_active ? 'badge-success' : 'badge-danger'}` }, o.is_active ? 'Active' : 'Suspended')),
+        el('td', {}, o.member_count), el('td', {}, o.course_count),
+        el('td', {}, el('button', { className:`btn-sm ${o.is_active ? 'btn-danger' : 'btn-secondary'}`, onClick: async () => {
+          const res = await apiFetch(`/api/orgs/${encodeURIComponent(o.id)}/${o.is_active ? 'suspend' : 'unsuspend'}`, { method:'PATCH' });
+          if (res.ok) showToast(o.is_active ? 'Tenant suspended' : 'Tenant reactivated'); else toast(await errMsg(res), 'error');
+          loadPlatformOrgs();
+        } }, o.is_active ? 'Suspend' : 'Reactivate')))))))));
+  return c;
+}
 
-    // Application State
-    const state = {
-      user: null,
-      orgs: [],
-      selectedOrgId: null,
-      overview: null,
-      activeTab: 'overview',
-      drawerCourse: null,
-      pollCount: 0,
-      pollTimer: null
+function renderUnassignedUsersView() {
+  if (!state.unassignedUsers) return el('div', { className:'empty' }, 'Loading users…');
+  return el('div', {}, pageHead('Unassigned users', 'Registered accounts that do not belong to any organization.'),
+    state.unassignedUsers.length === 0 ? el('div', { className:'card empty' }, 'Every registered user is assigned to an organization.')
+    : el('div', { className:'card' }, el('div', { className:'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, ...['User sub','Email','Name','Registered'].map(h => el('th', {}, h)))),
+      el('tbody', {}, ...state.unassignedUsers.map(u => el('tr', {}, el('td', { className:'mono' }, u.sub), el('td', {}, u.email), el('td', {}, `${u.first_name || ''} ${u.last_name || ''}`.trim() || '—'), el('td', { className:'muted' }, new Date(u.created_at).toLocaleDateString()))))))));
+}
+
+function syncBanner() {
+  const s = state.orgData?.sync;
+  return s && !s.in_sync ? el('div', { className:'banner' }, 'Permissions are syncing to OpenFGA… this view will refresh automatically.') : null;
+}
+
+function renderAdminDashboard() {
+  const stats = state.orgData.stats || { members:0, courses:0 };
+  const members = state.orgData.members || [];
+  const byRole = (r) => members.filter(m => m.role === r).length;
+  return el('div', {}, pageHead(`${state.orgData.org.name}`, 'Organization overview'), syncBanner(),
+    el('div', { className:'grid-2' },
+      el('div', { className:'card stat' }, el('span', { className:'label' }, 'Total members'), el('div', { className:'n' }, stats.members)),
+      el('div', { className:'card stat' }, el('span', { className:'label' }, 'Total courses'), el('div', { className:'n' }, stats.courses)),
+      el('div', { className:'card stat' }, el('span', { className:'label' }, 'Admins · Instructors · Learners'), el('div', { className:'n', style:'font-size:1.9rem' }, `${byRole('admin')} · ${byRole('instructor')} · ${byRole('learner')}`)),
+      el('div', { className:'card stat' }, el('span', { className:'label' }, 'Tenant status'), el('div', { style:'margin-top:.5rem' }, el('span', { className:`badge ${state.orgData.org.is_active ? 'badge-success' : 'badge-danger'}` }, state.orgData.org.is_active ? 'Active' : 'Suspended')), el('div', { className:'muted mono', style:'margin-top:.4rem' }, state.orgData.org.domain))),
+    el('h2', { style:'margin-top:.5rem' }, 'Courses'), courseGrid());
+}
+
+function courseGrid() {
+  const courses = state.orgData.courses || [];
+  if (!courses.length) return el('div', { className:'card empty' }, 'No courses available yet.');
+  return el('div', { className:'grid-3' }, ...courses.map(c => el('div', { className:'card course-card', style:'margin:0' },
+    el('div', {}, el('div', { className:'course-title' }, c.title), el('div', { className:'mono muted' }, c.id),
+      c.description ? el('p', { className:'muted', style:'margin-top:.5rem' }, c.description) : null,
+      el('div', { className:'perm-row' }, ...[['view','View'],['edit','Edit'],['delete','Delete']].map(([k, l]) => el('span', { className:`perm ${c.permissions[k] ? 'yes' : 'no'}` }, l)))),
+    el('div', { style:'margin-top:1.1rem;display:flex;gap:.5rem' },
+      el('button', { className:'btn-primary btn-sm', onClick:() => showTraceDrawer(c) }, 'Access trace'),
+      el('button', { className:'btn-secondary btn-sm', onClick:() => { state.consoleSel = Math.max(0, visibleEndpoints().findIndex(e => e.p.includes('{course_id}') && e.p.includes('trace'))); state.consoleParams = { course_id:c.id }; copy(c.id); } }, 'Copy ID')))));
+}
+
+function renderUserDashboard() {
+  const role = state.orgData.me.role;
+  return el('div', {}, pageHead(`${role[0].toUpperCase() + role.slice(1)} dashboard`, 'Courses available to you in this organization.'), syncBanner(), courseGrid());
+}
+
+function renderMembersView() {
+  const addForm = el('div', { className:'card' }, el('h2', {}, 'Add member'),
+    el('form', { onSubmit: async (e) => {
+      e.preventDefault(); const f = e.target;
+      const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/memberships`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email:f.email.value.trim(), role:f.role.value }) });
+      if (res.ok) { f.reset(); showToast('Member added'); loadOrg(); } else toast(await errMsg(res), 'error');
+    } }, el('div', { className:'form-row', style:'margin:0' },
+      el('input', { name:'email', placeholder:'user@example.com', required:true, style:'flex:2' }),
+      el('select', { name:'role' }, el('option', { value:'learner' }, 'Learner'), el('option', { value:'instructor' }, 'Instructor'), el('option', { value:'admin' }, 'Admin')),
+      el('button', { className:'btn-primary', type:'submit', style:'flex:0 0 auto' }, 'Add member'))));
+  const rows = (state.orgData?.members || []).map(m => {
+    const isMe = m.user_sub === state.user.sub;
+    const sel = el('select', { disabled:isMe, style:'width:130px', onChange: async (e) => {
+      const nr = e.target.value;
+      if (confirm(`Change role to ${nr}?`)) {
+        const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}/role`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ role:nr }) });
+        if (res.ok) { showToast('Role updated'); loadOrg(); } else { toast(await errMsg(res), 'error'); e.target.value = m.role; }
+      } else e.target.value = m.role;
+    } }, ...['learner','instructor','admin'].map(r => el('option', { value:r, selected:m.role === r }, r[0].toUpperCase() + r.slice(1))));
+    return el('tr', {},
+      el('td', {}, el('div', {}, m.first_name ? `${m.first_name} ${m.last_name || ''}` : m.user_sub), el('div', { className:'muted', style:'font-size:.75rem' }, m.email || ''), isMe ? el('span', { className:'badge badge-info' }, 'You') : null),
+      el('td', {}, sel),
+      el('td', {}, el('span', { className:`badge ${m.is_suspended ? 'badge-danger' : 'badge-success'}` }, m.is_suspended ? 'Suspended' : 'Active')),
+      el('td', {}, el('div', { style:'display:flex;gap:.5rem' },
+        el('button', { className:'btn-secondary btn-sm', disabled:isMe, onClick: async () => {
+          const a = m.is_suspended ? 'unsuspend' : 'suspend';
+          const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}/${a}`, { method:'PATCH' });
+          if (res.ok) { showToast(`User ${a}ed`); loadOrg(); } else toast(await errMsg(res), 'error');
+        } }, m.is_suspended ? 'Reinstate' : 'Suspend'),
+        el('button', { className:'btn-danger btn-sm', disabled:isMe, onClick: async () => {
+          if (!confirm(`Remove ${m.email || m.user_sub} from the organization?`)) return;
+          const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}`, { method:'DELETE' });
+          if (res.ok) { showToast('Member removed'); loadOrg(); } else toast(await errMsg(res), 'error');
+        } }, 'Remove'))));
+  });
+  return el('div', {}, pageHead('Members', 'Manage roles, suspensions and membership.'), addForm,
+    el('div', { className:'card' }, el('h2', {}, `Manage members (${rows.length})`), el('div', { className:'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, ...['User','Role','Status','Actions'].map(h => el('th', {}, h)))), el('tbody', {}, ...rows)))));
+}
+
+function renderCoursesManagementView() {
+  const create = el('div', { className:'card' }, el('h2', {}, 'Create course'),
+    el('form', { onSubmit: async (e) => {
+      e.preventDefault(); const f = e.target; let id = f.course_id.value.trim(); if (!id.startsWith('course:')) id = `course:${id}`;
+      const res = await apiFetch('/api/courses', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ course_id:id, org_id:state.selectedOrgId, title:f.title.value.trim(), description:f.description.value.trim() }) });
+      if (res.ok) { f.reset(); showToast('Course created'); loadOrg(); } else toast(await errMsg(res), 'error');
+    } },
+      el('div', { className:'form-row' }, el('input', { name:'course_id', placeholder:'course:cs101', required:true }), el('input', { name:'title', placeholder:'Course title', required:true })),
+      el('div', { className:'form-row' }, el('input', { name:'description', placeholder:'Description (optional)' }), el('button', { className:'btn-primary', type:'submit', style:'flex:0 0 auto' }, 'Create course'))));
+  const courses = state.orgData?.courses || [];
+  return el('div', {}, pageHead('Course management', 'Create and inspect courses for this organization.'), create,
+    el('div', { className:'card' }, el('h2', {}, `All courses (${courses.length})`), el('div', { className:'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, ...['Course ID','Title','Created',''].map(h => el('th', {}, h)))),
+      el('tbody', {}, ...courses.map(c => el('tr', {}, el('td', { className:'mono' }, c.id), el('td', {}, c.title), el('td', { className:'muted' }, fmtDate(c.created_at)), el('td', {}, el('button', { className:'btn-secondary btn-sm', onClick:() => showTraceDrawer(c) }, 'Trace')))))))));
+}
+
+function renderAuditView() {
+  const filterSel = el('select', { style:'width:150px', onChange:(e) => { state.auditFilter = e.target.value; state.auditLogs = null; render(); loadAudit(); } },
+    ...[['','All decisions'],['ALLOW','Allowed'],['DENY','Denied']].map(([v, l]) => el('option', { value:v, selected:state.auditFilter === v }, l)));
+  const csvBtn = el('button', { className:'btn-secondary', onClick: async () => {
+    const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/audit-logs?format=csv&limit=1000`);
+    if (!res.ok) return toast(await errMsg(res), 'error');
+    const url = URL.createObjectURL(await res.blob()); const a = el('a', { href:url, download:'audit_logs.csv' }); document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  } }, 'Export CSV');
+  return el('div', {}, pageHead('Audit logs', 'Every authorization decision, newest first.', filterSel, csvBtn),
+    !state.auditLogs ? el('div', { className:'empty' }, 'Loading logs…') :
+    el('div', { className:'card' }, state.auditLogs.length === 0 ? el('div', { className:'empty' }, 'No audit records match.') :
+      el('div', { className:'table-wrap' }, el('table', {},
+        el('thead', {}, el('tr', {}, ...['Time','User','Action','Resource','Decision'].map(h => el('th', {}, h)))),
+        el('tbody', {}, ...state.auditLogs.map(l => el('tr', {}, el('td', { className:'muted' }, fmtDate(l.timestamp)), el('td', { className:'mono' }, l.user_sub), el('td', {}, l.action), el('td', { className:'mono' }, l.resource), el('td', {}, el('span', { className:`badge ${l.decision === 'ALLOW' ? 'badge-success' : 'badge-danger'}` }, l.decision)))))))));
+}
+
+/* ---------- AI access (agent delegation) ---------- */
+const SCOPES = [
+  { id:'course:read', title:'Read courses', desc:'View course details you are allowed to see.', enforced:true },
+  { id:'course:edit', title:'Edit courses', desc:'Reserved — not enforced by the gateway yet.' },
+  { id:'course:delete', title:'Delete courses', desc:'Reserved — not enforced by the gateway yet.' }
+];
+const DURATIONS = [[15,'15 min'],[60,'1 hour'],[240,'4 hours'],[1440,'24 hours']];
+const form = { agent:'', org:null, scopes:['course:read'], minutes:60, custom:'' };
+
+function fmtRemaining(ms) {
+  if (ms <= 0) return 'Expired'; const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  return h ? `${h}h ${m}m ${x}s` : m ? `${m}m ${x}s` : `${x}s`;
+}
+let ticker = null;
+function startTicker() {
+  clearInterval(ticker);
+  ticker = setInterval(() => {
+    const nodes = document.querySelectorAll('[data-exp]');
+    if (!nodes.length) return clearInterval(ticker);
+    nodes.forEach(n => { const r = new Date(n.dataset.exp) - Date.now(); n.textContent = fmtRemaining(r); n.style.color = r <= 0 ? 'var(--danger)' : r < 300000 ? 'var(--warn)' : 'var(--success)'; });
+  }, 1000);
+}
+
+function renderAgentsView() {
+  if (!form.org) form.org = state.selectedOrgId || state.orgs[0]?.org_id || '';
+  const c = el('div');
+  c.appendChild(pageHead('AI access', 'Let an AI model act on your behalf — only within the scopes and time window you choose.'));
+  if (!state.orgs.length) { c.appendChild(el('div', { className:'card empty' }, 'You need to belong to an organization before delegating access.')); return c; }
+
+  const scopeBoxes = SCOPES.map(s => {
+    const cb = el('input', { type:'checkbox', checked:form.scopes.includes(s.id), onChange:(e) => { form.scopes = e.target.checked ? [...new Set([...form.scopes, s.id])] : form.scopes.filter(x => x !== s.id); label.className = `scope-opt ${e.target.checked ? 'on' : ''}`; } });
+    const label = el('label', { className:`scope-opt ${form.scopes.includes(s.id) ? 'on' : ''}` }, cb,
+      el('div', {}, el('div', { style:'font-weight:600' }, s.title, ' ', el('span', { className:'mono muted' }, s.id)), el('div', { className:'muted', style:'font-size:.8rem' }, s.desc)));
+    return label;
+  });
+  const chipWrap = el('div', { className:'chips' });
+  const customInput = el('input', { type:'number', min:'1', max:'10080', placeholder:'Custom (min)', style:'width:130px', value:form.custom, onInput:(e) => { form.custom = e.target.value; if (form.custom) { form.minutes = null; paintChips(); } } });
+  function paintChips() { chipWrap.innerHTML = ''; DURATIONS.forEach(([m, l]) => chipWrap.appendChild(el('button', { type:'button', className:`chip ${form.minutes === m ? 'on' : ''}`, onClick:() => { form.minutes = m; form.custom = ''; customInput.value = ''; paintChips(); } }, l))); chipWrap.appendChild(customInput); }
+  paintChips();
+
+  c.appendChild(el('div', { className:'grid-2', style:'grid-template-columns:minmax(320px,1.2fr) minmax(300px,1fr);align-items:start' },
+    el('div', { className:'card', style:'margin:0' }, el('h2', {}, 'Grant temporary access'),
+      el('form', { onSubmit: async (e) => {
+        e.preventDefault();
+        const mins = form.minutes || parseInt(form.custom, 10);
+        if (!form.agent.trim()) return toast('Give the AI model a name or ID', 'error');
+        if (!form.scopes.length) return toast('Select at least one scope', 'error');
+        if (!mins || mins < 1) return toast('Choose a duration', 'error');
+        const res = await apiFetch('/api/agents/delegate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ agent_id:form.agent.trim(), org_id:form.org, scopes:form.scopes, duration_minutes:mins }) });
+        if (!res.ok) return toast(await errMsg(res), 'error');
+        const d = await res.json();
+        const rec = { agent_id:form.agent.trim(), org_id:form.org, scopes:[...form.scopes], expires_at:d.expires_at, token:d.token, created_at:new Date().toISOString() };
+        state.delegations.unshift(rec); saveDelegations(); state.lastToken = rec; showToast('Access granted'); render();
+      } },
+        el('div', { className:'field', style:'margin-bottom:1rem' }, el('span', { className:'label' }, 'AI model / agent ID'), el('input', { placeholder:'e.g. claude-study-helper', value:form.agent, onInput:(e) => form.agent = e.target.value })),
+        el('div', { className:'field', style:'margin-bottom:1rem' }, el('span', { className:'label' }, 'Organization'),
+          el('select', { onChange:(e) => form.org = e.target.value }, ...state.orgs.map(o => el('option', { value:o.org_id, selected:o.org_id === form.org }, o.name)))),
+        el('div', { className:'field', style:'margin-bottom:1rem' }, el('span', { className:'label' }, 'Permissions'), el('div', { style:'display:flex;flex-direction:column;gap:.5rem' }, ...scopeBoxes)),
+        el('div', { className:'field', style:'margin-bottom:1.25rem' }, el('span', { className:'label' }, 'Valid for'), chipWrap),
+        el('button', { className:'btn-primary', type:'submit', style:'width:100%;padding:.7rem' }, 'Grant access'))),
+    el('div', {},
+      el('div', { className:'info-box', style:'margin-bottom:1rem' }, 'The AI acts as you: every request is still checked against your own permissions, and stops working automatically when the time runs out.'),
+      state.lastToken ? tokenCard(state.lastToken) : el('div', { className:'card empty', style:'margin:0' }, 'Your new access token will appear here.'))));
+
+  c.appendChild(el('div', { className:'card', style:'margin-top:1.25rem' }, el('h2', {}, 'Your grants (this session)'),
+    state.delegations.length === 0 ? el('div', { className:'empty' }, 'No grants yet.') :
+    el('div', { className:'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, ...['Agent','Organization','Scopes','Time left',''].map(h => el('th', {}, h)))),
+      el('tbody', {}, ...state.delegations.map((d, i) => el('tr', {},
+        el('td', {}, d.agent_id), el('td', { className:'mono' }, d.org_id),
+        el('td', {}, ...d.scopes.map(s => el('span', { className:'badge badge-purple', style:'margin-right:.3rem' }, s))),
+        el('td', {}, el('span', { className:'countdown', 'data-exp':d.expires_at }, fmtRemaining(new Date(d.expires_at) - Date.now()))),
+        el('td', {}, el('div', { style:'display:flex;gap:.4rem' },
+          el('button', { className:'btn-secondary btn-sm', onClick:() => { state.lastToken = d; render(); } }, 'View'),
+          el('button', { className:'btn-danger btn-sm', onClick:() => { state.delegations.splice(i, 1); saveDelegations(); if (state.lastToken === d) state.lastToken = null; render(); toast('Removed from this list. The token itself stays valid until it expires.'); } }, 'Forget'))))))),
+    ),
+    el('p', { className:'muted', style:'margin-top:.8rem;font-size:.78rem' }, 'The gateway has no list or revoke endpoint for delegations yet, so this list lives in your browser session and "Forget" does not invalidate a token.')));
+  startTicker();
+  return c;
+}
+
+function tokenCard(d) {
+  const resultBox = el('div');
+  const courseInput = el('input', { placeholder:'course:cs101', style:'flex:1' });
+  const curl = `curl -H "Authorization: Bearer ${d.token}" ${location.origin}/api/courses/course%3Acs101`;
+  return el('div', { className:'card', style:'margin:0' },
+    el('div', { style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem' }, el('h2', { style:'margin:0' }, d.agent_id),
+      el('span', { className:'countdown', 'data-exp':d.expires_at }, fmtRemaining(new Date(d.expires_at) - Date.now()))),
+    el('div', { className:'muted', style:'margin-bottom:.8rem;font-size:.8rem' }, `Expires ${fmtDate(d.expires_at)} · ${d.org_id}`),
+    el('span', { className:'label' }, 'Access token — give this to the AI'),
+    el('div', { className:'token-box' }, d.token),
+    el('div', { style:'display:flex;gap:.5rem;margin:.7rem 0 1rem;flex-wrap:wrap' },
+      el('button', { className:'btn-secondary btn-sm', onClick:() => copy(d.token) }, 'Copy token'),
+      el('button', { className:'btn-secondary btn-sm', onClick:() => copy(curl) }, 'Copy curl example')),
+    el('span', { className:'label' }, 'Test this token'),
+    el('div', { style:'display:flex;gap:.5rem' }, courseInput,
+      el('button', { className:'btn-primary btn-sm', onClick: async () => {
+        const id = courseInput.value.trim(); if (!id) return;
+        resultBox.innerHTML = '';
+        try {
+          const r = await fetch(`/api/courses/${encodeURIComponent(id)}`, { headers:{ Authorization:`Bearer ${d.token}` } });
+          const txt = await r.text(); let pretty = txt; try { pretty = JSON.stringify(JSON.parse(txt), null, 2); } catch {}
+          resultBox.appendChild(el('div', { style:'margin-top:.7rem' }, el('span', { className:`status-pill ${r.ok ? 'st-ok' : 'st-err'}` }, `${r.status} ${r.statusText}`), el('div', { className:'resp', style:'margin-top:.5rem;max-height:200px' }, pretty)));
+        } catch (e) { resultBox.appendChild(el('div', { className:'resp' }, e.message)); }
+      } }, 'Send')),
+    resultBox);
+}
+
+/* ---------- API console ---------- */
+function renderConsole() {
+  const eps = visibleEndpoints();
+  if (state.consoleSel >= eps.length) state.consoleSel = 0;
+  const wrap = el('div');
+  wrap.appendChild(pageHead('API console', isSuper() ? 'Super admin: every gateway endpoint, called with your session token.' : 'Org admin: organization-level endpoints, called with your session token.'));
+  const listBox = el('div', { className:'card ep-list', style:'margin:0;padding:.5rem' });
+  const detail = el('div');
+  const flex = el('div', { className:'console' }, listBox, detail);
+  wrap.appendChild(flex);
+
+  function paintList() {
+    listBox.innerHTML = ''; let last = '';
+    eps.forEach((e, i) => {
+      if (e.g !== last) { listBox.appendChild(el('div', { className:'ep-group' }, e.g)); last = e.g; }
+      listBox.appendChild(el('button', { className:`ep ${i === state.consoleSel ? 'active' : ''}`, onClick:() => { state.consoleSel = i; state.consoleBody = null; state.consoleResp = null; paintList(); paintDetail(); } },
+        el('span', { className:`method m-${e.m}` }, e.m), el('span', { className:'path' }, e.p.replace('/api', ''))));
+    });
+  }
+  function paintDetail() {
+    detail.innerHTML = ''; const e = eps[state.consoleSel]; const pp = pathParams(e.p);
+    const inputs = {}; const hasBody = e.body !== undefined || ['POST','PATCH'].includes(e.m);
+    const defaultBody = e.body ? JSON.stringify(e.body, null, 2).replace(/"\{org\}"/g, JSON.stringify(state.selectedOrgId || '')) : '{}';
+    if (state.consoleBody === null) state.consoleBody = defaultBody;
+    const bodyArea = hasBody ? el('textarea', { spellcheck:'false', onInput:(ev) => state.consoleBody = ev.target.value }) : null;
+    if (bodyArea) bodyArea.value = state.consoleBody;
+    const respBox = el('div');
+    const paintResp = () => {
+      respBox.innerHTML = ''; const r = state.consoleResp; if (!r) return;
+      respBox.appendChild(el('div', { style:'display:flex;gap:.7rem;align-items:center;margin:1rem 0 .5rem' }, el('span', { className:`status-pill ${r.ok ? 'st-ok' : 'st-err'}` }, `${r.status} ${r.statusText}`), el('span', { className:'muted' }, `${r.ms} ms`),
+        el('button', { className:'btn-secondary btn-sm', style:'margin-left:auto', onClick:() => copy(r.text) }, 'Copy')));
+      respBox.appendChild(el('div', { className:'resp' }, r.text));
     };
-
-    async function init() {
-      const app = document.getElementById('app');
-      app.textContent = '';
-
-      if (window.location.search.includes('code=')) {
-        try {
-          await handleAuthCallback();
-        } catch (err) {
-          console.error(err);
-          startLogin();
-          return;
-        }
-      }
-
-      const token = sessionStorage.getItem('access_token');
-      if (!token) {
-        renderUnauthenticated();
-        return;
-      }
-
+    const urlPreview = el('div', { className:'mono muted', style:'margin:.6rem 0 1rem;word-break:break-all' });
+    const buildUrl = () => {
+      let u = e.p.replace('{org_id}', encodeURIComponent(state.selectedOrgId || ''));
+      pp.forEach(k => { u = u.replace(`{${k}}`, encodeURIComponent(state.consoleParams[k] || '')); });
+      return u;
+    };
+    const refreshUrl = () => urlPreview.textContent = buildUrl();
+    pp.filter(k => k !== 'org_id').forEach(k => {
+      inputs[k] = el('input', { placeholder:k === 'user_sub' ? 'Keycloak user sub (UUID)' : k === 'course_id' ? 'course:cs101' : k, value:state.consoleParams[k] || '', onInput:(ev) => { state.consoleParams[k] = ev.target.value; refreshUrl(); } });
+    });
+    const send = async () => {
+      const missing = pp.filter(k => k !== 'org_id' && !state.consoleParams[k]);
+      if (missing.length) return toast(`Fill in: ${missing.join(', ')}`, 'error');
+      if (e.danger && !confirm(e.danger + '\n\nContinue?')) return;
+      const opts = { method:e.m, headers:{} };
+      if (hasBody) { try { JSON.parse(state.consoleBody); } catch { return toast('Body is not valid JSON', 'error'); } opts.headers['Content-Type'] = 'application/json'; opts.body = state.consoleBody; }
+      const t0 = performance.now(); sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
       try {
-        const res = await apiFetch('/api/me');
-        if (!res.ok) throw new Error('Failed to load user profile');
-        const data = await res.json();
-        state.user = data.user;
-        state.orgs = data.orgs || [];
+        const res = await apiFetch(buildUrl(), opts); const txt = await res.text(); let pretty = txt;
+        try { pretty = JSON.stringify(JSON.parse(txt), null, 2); } catch {}
+        state.consoleResp = { ok:res.ok, status:res.status, statusText:res.statusText, text:pretty || '(empty)', ms:Math.round(performance.now() - t0) };
+        if (res.ok && e.m !== 'GET') { loadOrg().catch(() => {}); if (isSuper()) loadPlatformOrgs(false).catch(() => {}); }
+      } catch (err) { state.consoleResp = { ok:false, status:0, statusText:'Network error', text:err.message, ms:Math.round(performance.now() - t0) }; }
+      sendBtn.disabled = false; sendBtn.textContent = 'Send request'; paintResp();
+    };
+    const sendBtn = el('button', { className:'btn-primary', onClick:send }, 'Send request');
+    detail.appendChild(el('div', { className:'card', style:'margin:0' },
+      el('div', { style:'display:flex;align-items:center;gap:.7rem' }, el('span', { className:`method m-${e.m}`, style:'font-size:.8rem;padding:.3rem .6rem' }, e.m), el('span', { className:'mono' }, e.p),
+        el('span', { className:`badge ${e.who === 'super' ? 'badge-purple' : e.who === 'admin' ? 'badge-warn' : 'badge-info'}`, style:'margin-left:auto' }, e.who === 'super' ? 'Super admin' : e.who === 'admin' ? 'Org admin' : 'Any user')),
+      urlPreview,
+      e.danger ? el('div', { className:'banner' }, e.danger) : null,
+      pp.filter(k => k !== 'org_id').length ? el('div', { style:'margin-bottom:1rem;display:flex;flex-direction:column;gap:.7rem' }, ...pp.filter(k => k !== 'org_id').map(k => el('div', { className:'field' }, el('span', { className:'label' }, k), inputs[k]))) : null,
+      pp.includes('org_id') ? el('div', { className:'muted', style:'margin-bottom:1rem;font-size:.8rem' }, `org_id is taken from the sidebar selection (${state.selectedOrgId || 'none'}).`) : null,
+      hasBody ? el('div', { className:'field', style:'margin-bottom:1rem' }, el('span', { className:'label' }, 'JSON body'), bodyArea) : null,
+      sendBtn, respBox));
+    refreshUrl(); paintResp();
+  }
+  paintList(); paintDetail();
+  return wrap;
+}
 
-        if (state.orgs.length > 0) {
-          state.selectedOrgId = state.orgs[0].org_id;
-          await loadOrgOverview(state.selectedOrgId);
-        } else {
-          renderApp();
-        }
-      } catch (err) {
-        renderUnauthenticated();
-      }
-    }
+/* ---------- trace drawer ---------- */
+async function showTraceDrawer(course) {
+  const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/courses/${encodeURIComponent(course.id)}/trace`);
+  if (!res.ok) return toast(await errMsg(res), 'error');
+  const data = await res.json();
+  const close = () => bg.remove();
+  const bg = el('div', { className:'drawer-bg', onClick:(e) => { if (e.target === bg) close(); } },
+    el('div', { className:'drawer' },
+      el('div', { style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem' }, el('h2', { style:'margin:0' }, 'Access trace'), el('button', { className:'btn-secondary btn-sm', onClick:close }, 'Close')),
+      el('h3', { style:'color:var(--primary)' }, course.title), el('div', { className:'mono muted', style:'margin-bottom:1rem' }, course.id),
+      el('div', { style:'display:flex;gap:.5rem;margin-bottom:1.25rem' }, ...[['view','View'],['edit','Edit'],['delete','Delete']].map(([k, l]) => el('span', { className:`perm ${data.decision[k] ? 'yes' : 'no'}` }, l))),
+      ...data.steps.map(s => el('div', { className:`step ${s.passed ? 'ok' : 'bad'}` },
+        el('div', { style:'font-weight:600;text-transform:capitalize' }, (s.passed ? '✓ ' : '✗ ') + s.key.replace(/_/g, ' ')),
+        el('div', { className:'muted', style:'font-size:.82rem;margin-top:.3rem' }, s.detail)))));
+  document.body.appendChild(bg);
+}
 
-    async function loadOrgOverview(orgId) {
-      try {
-        const res = await apiFetch(`/api/orgs/${encodeURIComponent(orgId)}/overview`);
-        if (!res.ok) {
-          state.overview = null;
-        } else {
-          state.overview = await res.json();
-          handleSyncPolling();
-        }
-      } catch (err) {
-        state.overview = null;
-      }
-      renderApp();
-    }
-
-    function handleSyncPolling() {
-      if (state.overview && state.overview.sync && !state.overview.sync.in_sync && state.pollCount < 8) {
-        clearTimeout(state.pollTimer);
-        state.pollTimer = setTimeout(async () => {
-          state.pollCount++;
-          const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/overview`);
-          if (res.ok) {
-            state.overview = await res.json();
-            renderApp();
-            handleSyncPolling();
-          }
-        }, 1500);
-      } else {
-        state.pollCount = 0;
-      }
-    }
-
-    function triggerActionReload() {
-      showToast('OpenFGA syncs within about a second');
-      setTimeout(async () => {
-        await loadOrgOverview(state.selectedOrgId);
-      }, 1400);
-    }
-
-    function renderUnauthenticated() {
-      const app = document.getElementById('app');
-      app.textContent = '';
-      app.appendChild(
-        el('div', { style: 'display: flex; height: 100vh; align-items: center; justify-content: center;' },
-          el('div', { className: 'card', style: 'text-align: center; width: 360px;' },
-            el('h2', { style: 'margin-bottom: 1rem;' }, 'IAM Dashboard'),
-            el('p', { style: 'color: var(--text-muted); margin-bottom: 1.5rem;' }, 'Sign in to access multi-tenant resources.'),
-            el('button', { className: 'primary', style: 'width: 100%;', onClick: startLogin }, 'Sign In with Keycloak')
-          )
-        )
-      );
-    }
-
-    function renderApp() {
-      const app = document.getElementById('app');
-      app.textContent = '';
-
-      // Header
-      const header = el('header', {},
-        el('div', { className: 'header-left' },
-          el('h3', {}, 'IAM Portal'),
-          state.orgs.length > 0 ? el('select', {
-            onChange: async (e) => {
-              state.selectedOrgId = e.target.value;
-              state.pollCount = 0;
-              await loadOrgOverview(state.selectedOrgId);
-            }
-          }, ...state.orgs.map(o => {
-            const opt = el('option', { value: o.org_id }, o.name);
-            if (o.org_id === state.selectedOrgId) opt.selected = true;
-            return opt;
-          })) : null
-        ),
-        el('div', { className: 'header-right' },
-          el('span', { style: 'font-size: 0.875rem; color: var(--text-muted);' }, state.user.email),
-          el('button', {
-            onClick: async () => {
-              await apiFetch('/api/auth/revoke-session', { method: 'POST' });
-              sessionStorage.clear();
-              startLogin();
-            }
-          }, 'Revoke session'),
-          el('button', {
-            onClick: () => {
-              sessionStorage.clear();
-              window.location.href = `${CONFIG.keycloakUrl}/realms/${CONFIG.realm}/protocol/openid-connect/logout?redirect_uri=${encodeURIComponent(CONFIG.redirectUri)}`;
-            }
-          }, 'Sign out')
-        )
-      );
-      app.appendChild(header);
-
-      const main = el('main');
-      app.appendChild(main);
-
-      // Empty State: Create Organization
-      if (state.orgs.length === 0) {
-        main.appendChild(
-          el('div', { className: 'card' },
-            el('h3', { style: 'margin-bottom: 1rem;' }, 'Create an Organization'),
-            el('p', { style: 'color: var(--text-muted); margin-bottom: 1rem;' }, 'You do not belong to any organization. Register one to get started:'),
-            el('form', {
-              onSubmit: async (e) => {
-                e.preventDefault();
-                const form = e.target;
-                const orgId = form.org_id.value.trim();
-                const name = form.name.value.trim();
-                const res = await apiFetch('/api/orgs', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ org_id: orgId, name })
-                });
-                if (res.ok) {
-                  triggerActionReload();
-                  const meRes = await apiFetch('/api/me');
-                  const meData = await meRes.json();
-                  state.orgs = meData.orgs;
-                  state.selectedOrgId = orgId;
-                  await loadOrgOverview(orgId);
-                } else {
-                  const err = await res.json();
-                  alert(err.error || 'Failed to create organization');
-                }
-              }
-            },
-              el('div', { style: 'display: flex; gap: 1rem; margin-bottom: 1rem;' },
-                el('input', { name: 'org_id', placeholder: 'organization:myorg', required: true, style: 'flex: 1;' }),
-                el('input', { name: 'name', placeholder: 'Display Name', required: true, style: 'flex: 1;' })
-              ),
-              el('button', { className: 'primary', type: 'submit' }, 'Create Organization')
-            )
-          )
-        );
-        return;
-      }
-
-      if (!state.overview) {
-        main.appendChild(el('div', { className: 'card' }, 'Loading organization data...'));
-        return;
-      }
-
-      const ov = state.overview;
-      const myRole = ov.me.role;
-
-      // Status Bar
-      const roleChip = el('span', { className: `chip ${myRole || 'none'}` }, myRole ? `Role: ${myRole}` : 'No Active Role');
-      const tenantChip = el('span', { className: `chip ${ov.me.tenant_active ? 'active' : 'suspended'}` }, ov.me.tenant_active ? 'Tenant Active' : 'Tenant Suspended');
-      const memberChip = el('span', { className: `chip ${!ov.me.suspended ? 'active' : 'suspended'}` }, !ov.me.suspended ? 'Membership Active' : 'Membership Suspended');
-      const syncChip = el('span', { className: `chip ${ov.sync.in_sync ? 'active' : 'syncing'}` }, ov.sync.in_sync ? 'Permissions in sync' : 'Syncing changes...');
-
-      main.appendChild(el('div', { className: 'status-bar' }, roleChip, tenantChip, memberChip, syncChip));
-
-      // No role explanation
-      if (!myRole) {
-        let reason = 'You do not currently have an active role in this organization.';
-        if (!ov.me.tenant_active) reason = 'This organization has been suspended.';
-        else if (ov.me.suspended) reason = 'Your membership in this organization is suspended.';
-
-        main.appendChild(el('div', { className: 'card', style: 'border-left: 4px solid var(--danger);' },
-          el('h4', { style: 'color: #f87171; margin-bottom: 0.5rem;' }, 'Access Suspended'),
-          el('p', { style: 'color: var(--text-muted);' }, reason)
-        ));
-        return;
-      }
-
-      // Admin vs Learner/Instructor routing
-      if (myRole === 'admin') {
-        renderAdminView(main);
-      } else {
-        renderLearnerInstructorView(main);
-      }
-
-      // Drawer
-      if (state.drawerCourse) {
-        renderTraceDrawer();
-      }
-    }
-
-    function renderLearnerInstructorView(container) {
-      container.appendChild(el('h3', { style: 'margin-bottom: 1rem;' }, 'Courses'));
-      const courses = state.overview.courses || [];
-
-      if (courses.length === 0) {
-        container.appendChild(el('div', { className: 'card' }, 'No courses available for your permission level.'));
-        return;
-      }
-
-      const grid = el('div', { style: 'display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;' });
-      for (const c of courses) {
-        grid.appendChild(
-          el('div', { className: 'card', style: 'margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;' },
-            el('div', {},
-              el('h4', { style: 'margin-bottom: 0.5rem;' }, c.title),
-              el('p', { style: 'color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;' }, c.course_id),
-              el('div', { style: 'display: flex; gap: 0.5rem; margin-bottom: 1.5rem;' },
-                el('span', { className: `pill ${c.view ? 'yes' : 'no'}` }, 'View'),
-                el('span', { className: `pill ${c.edit ? 'yes' : 'no'}` }, 'Edit'),
-                el('span', { className: `pill ${c.delete ? 'yes' : 'no'}` }, 'Delete')
-              )
-            ),
-            el('button', {
-              onClick: () => {
-                state.drawerCourse = c;
-                renderTraceDrawer();
-              }
-            }, 'Why do I have this access?')
-          )
-        );
-      }
-      container.appendChild(grid);
-    }
-
-    function renderAdminView(container) {
-      // Tabs
-      const tabs = el('div', { className: 'tabs' },
-        el('button', {
-          className: `tab-btn ${state.activeTab === 'overview' ? 'active' : ''}`,
-          onClick: () => { state.activeTab = 'overview'; renderApp(); }
-        }, 'Overview'),
-        el('button', {
-          className: `tab-btn ${state.activeTab === 'members' ? 'active' : ''}`,
-          onClick: () => { state.activeTab = 'members'; renderApp(); }
-        }, 'Members & Permissions'),
-        el('button', {
-          className: `tab-btn ${state.activeTab === 'courses' ? 'active' : ''}`,
-          onClick: () => { state.activeTab = 'courses'; renderApp(); }
-        }, 'Courses'),
-        el('button', {
-          className: `tab-btn ${state.activeTab === 'audit' ? 'active' : ''}`,
-          onClick: () => { state.activeTab = 'audit'; renderApp(); }
-        }, 'Audit Log')
-      );
-      container.appendChild(tabs);
-
-      if (state.activeTab === 'overview') renderAdminOverviewTab(container);
-      else if (state.activeTab === 'members') renderAdminMembersTab(container);
-      else if (state.activeTab === 'courses') renderAdminCoursesTab(container);
-      else if (state.activeTab === 'audit') renderAdminAuditTab(container);
-    }
-
-    async function renderAdminOverviewTab(container) {
-      const stats = state.overview.stats || { members: 0, courses: 0 };
-      const statsGrid = el('div', { className: 'grid-stats' },
-        el('div', { className: 'stat-tile' },
-          el('span', { style: 'color: var(--text-muted); font-size: 0.875rem;' }, 'Total Members'),
-          el('div', { className: 'stat-val' }, stats.members)
-        ),
-        el('div', { className: 'stat-tile' },
-          el('span', { style: 'color: var(--text-muted); font-size: 0.875rem;' }, 'Total Courses'),
-          el('div', { className: 'stat-val' }, stats.courses)
-        )
-      );
-      container.appendChild(statsGrid);
-
-      // Recent 6 audit logs
-      const auditCard = el('div', { className: 'card' },
-        el('h4', { style: 'margin-bottom: 1rem;' }, 'Recent Audit Events (Last 6)')
-      );
-      container.appendChild(auditCard);
-
-      try {
-        const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/audit-logs?limit=6`);
-        if (res.ok) {
-          const data = await res.json();
-          const table = el('table', {},
-            el('thead', {},
-              el('tr', {},
-                el('th', {}, 'Time'),
-                el('th', {}, 'User'),
-                el('th', {}, 'Action'),
-                el('th', {}, 'Resource'),
-                el('th', {}, 'Decision')
-              )
-            ),
-            el('tbody', {}, ...data.logs.map(log =>
-              el('tr', {},
-                el('td', {}, new Date(log.created_at).toLocaleTimeString()),
-                el('td', {}, log.user_sub),
-                el('td', {}, log.action),
-                el('td', {}, log.resource_id),
-                el('td', {}, el('span', { className: `pill ${log.decision === 'ALLOW' ? 'yes' : 'no'}` }, log.decision))
-              )
-            ))
-          );
-          auditCard.appendChild(table);
-        }
-      } catch (e) {
-        auditCard.appendChild(el('p', { style: 'color: var(--text-muted);' }, 'Failed to load audit events.'));
-      }
-    }
-
-    async function renderAdminMembersTab(container) {
-      // Add member form
-      const addForm = el('div', { className: 'card' },
-        el('h4', { style: 'margin-bottom: 1rem;' }, 'Add Member'),
-        el('form', {
-          onSubmit: async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const email = form.email.value.trim();
-            const role = form.role.value;
-            const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/memberships`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, role })
-            });
-            if (res.ok) {
-              form.reset();
-              triggerActionReload();
-            } else {
-              const err = await res.json();
-              alert(err.error || 'Failed to add member');
-            }
-          }
-        },
-          el('div', { style: 'display: flex; gap: 1rem;' },
-            el('input', { name: 'email', placeholder: 'user@example.com', required: true, style: 'flex: 2;' }),
-            el('select', { name: 'role', style: 'flex: 1;' },
-              el('option', { value: 'learner' }, 'Learner'),
-              el('option', { value: 'instructor' }, 'Instructor'),
-              el('option', { value: 'admin' }, 'Admin')
-            ),
-            el('button', { className: 'primary', type: 'submit' }, 'Add Member')
-          )
-        )
-      );
-      container.appendChild(addForm);
-
-      // Members table
-      const membersCard = el('div', { className: 'card' },
-        el('h4', { style: 'margin-bottom: 1rem;' }, 'Organization Members')
-      );
-      container.appendChild(membersCard);
-
-      try {
-        const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members`);
-        if (res.ok) {
-          const data = await res.json();
-          const table = el('table', {},
-            el('thead', {},
-              el('tr', {},
-                el('th', {}, 'Member'),
-                el('th', {}, 'Role'),
-                el('th', {}, 'Status'),
-                el('th', {}, 'Actions')
-              )
-            ),
-            el('tbody', {}, ...data.members.map(m => {
-              const roleSelect = el('select', {
-                disabled: m.user_sub === state.user.sub,
-                onChange: async (e) => {
-                  const newRole = e.target.value;
-                  if (confirm(`Change role of ${m.email || m.user_sub} to ${newRole}?`)) {
-                    const patchRes = await apiFetch(
-                      `/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}/role`,
-                      {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ role: newRole })
-                      }
-                    );
-                    if (patchRes.ok) triggerActionReload();
-                    else {
-                      const err = await patchRes.json();
-                      alert(err.error || 'Failed to change role');
-                      e.target.value = m.role;
-                    }
-                  } else {
-                    e.target.value = m.role;
-                  }
-                }
-              },
-                el('option', { value: 'admin', selected: m.role === 'admin' }, 'admin'),
-                el('option', { value: 'instructor', selected: m.role === 'instructor' }, 'instructor'),
-                el('option', { value: 'learner', selected: m.role === 'learner' }, 'learner')
-              );
-
-              const suspendBtn = el('button', {
-                disabled: m.user_sub === state.user.sub,
-                onClick: async () => {
-                  const action = m.is_suspended ? 'unsuspend' : 'suspend';
-                  const patchRes = await apiFetch(
-                    `/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}/${action}`,
-                    { method: 'PATCH' }
-                  );
-                  if (patchRes.ok) triggerActionReload();
-                  else {
-                    const err = await patchRes.json();
-                    alert(err.error || `Failed to ${action} member`);
-                  }
-                }
-              }, m.is_suspended ? 'Reinstate' : 'Suspend');
-
-              const removeBtn = el('button', {
-                className: 'danger',
-                disabled: m.user_sub === state.user.sub,
-                onClick: async () => {
-                  if (confirm(`Remove member ${m.email || m.user_sub}?`)) {
-                    const delRes = await apiFetch(
-                      `/api/orgs/${encodeURIComponent(state.selectedOrgId)}/members/${encodeURIComponent(m.user_sub)}`,
-                      { method: 'DELETE' }
-                    );
-                    if (delRes.ok) triggerActionReload();
-                    else {
-                      const err = await delRes.json();
-                      alert(err.error || 'Failed to remove member');
-                    }
-                  }
-                }
-              }, 'Remove');
-
-              return el('tr', {},
-                el('td', {},
-                  el('div', { style: 'font-weight: 600;' }, m.name || m.user_sub),
-                  el('div', { style: 'font-size: 0.75rem; color: var(--text-muted);' }, m.email || m.user_sub)
-                ),
-                el('td', {}, roleSelect),
-                el('td', {}, el('span', { className: `chip ${m.is_suspended ? 'suspended' : 'active'}` }, m.is_suspended ? 'Suspended' : 'Active')),
-                el('td', {}, el('div', { style: 'display: flex; gap: 0.5rem;' }, suspendBtn, removeBtn))
-              );
-            }))
-          );
-          membersCard.appendChild(table);
-        }
-      } catch (e) {
-        membersCard.appendChild(el('p', { style: 'color: var(--text-muted);' }, 'Failed to load members.'));
-      }
-
-      // Static Role-Capability Matrix
-      const matrixCard = el('div', { className: 'card' },
-        el('h4', { style: 'margin-bottom: 1rem;' }, 'Role Capability Matrix'),
-        el('table', {},
-          el('thead', {},
-            el('tr', {},
-              el('th', {}, 'Capability'),
-              el('th', {}, 'Learner'),
-              el('th', {}, 'Instructor'),
-              el('th', {}, 'Admin')
-            )
-          ),
-          el('tbody', {},
-            el('tr', {},
-              el('td', {}, 'View Courses'),
-              el('td', {}, el('span', { className: 'pill yes' }, 'YES')),
-              el('td', {}, el('span', { className: 'pill yes' }, 'YES')),
-              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
-            ),
-            el('tr', {},
-              el('td', {}, 'Edit Courses'),
-              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
-              el('td', {}, el('span', { className: 'pill yes' }, 'YES')),
-              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
-            ),
-            el('tr', {},
-              el('td', {}, 'Delete Courses'),
-              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
-              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
-              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
-            ),
-            el('tr', {},
-              el('td', {}, 'Manage Members & Roles'),
-              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
-              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
-              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
-            ),
-            el('tr', {},
-              el('td', {}, 'View Audit Logs'),
-              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
-              el('td', {}, el('span', { className: 'pill no' }, 'NO')),
-              el('td', {}, el('span', { className: 'pill yes' }, 'YES'))
-            )
-          )
-        )
-      );
-      container.appendChild(matrixCard);
-    }
-
-    function renderAdminCoursesTab(container) {
-      // Create course form
-      const createCard = el('div', { className: 'card' },
-        el('h4', { style: 'margin-bottom: 1rem;' }, 'Create New Course'),
-        el('form', {
-          onSubmit: async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const courseId = form.course_id.value.trim();
-            const title = form.title.value.trim();
-            const res = await apiFetch('/api/courses', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ course_id: courseId, org_id: state.selectedOrgId, title })
-            });
-            if (res.ok) {
-              form.reset();
-              triggerActionReload();
-            } else {
-              const err = await res.json();
-              alert(err.error || 'Failed to create course');
-            }
-          }
-        },
-          el('div', { style: 'display: flex; gap: 1rem;' },
-            el('input', { name: 'course_id', placeholder: 'course:cs301', required: true, style: 'flex: 1;' }),
-            el('input', { name: 'title', placeholder: 'Course Title', required: true, style: 'flex: 2;' }),
-            el('button', { className: 'primary', type: 'submit' }, 'Create Course')
-          )
-        )
-      );
-      container.appendChild(createCard);
-
-      // Courses table
-      const listCard = el('div', { className: 'card' },
-        el('h4', { style: 'margin-bottom: 1rem;' }, 'Courses & Access')
-      );
-      container.appendChild(listCard);
-
-      const courses = state.overview.courses || [];
-      if (courses.length === 0) {
-        listCard.appendChild(el('p', { style: 'color: var(--text-muted);' }, 'No courses created yet.'));
-      } else {
-        const table = el('table', {},
-          el('thead', {},
-            el('tr', {},
-              el('th', {}, 'Course ID'),
-              el('th', {}, 'Title'),
-              el('th', {}, 'Permissions'),
-              el('th', {}, 'Trace')
-            )
-          ),
-          el('tbody', {}, ...courses.map(c =>
-            el('tr', {},
-              el('td', { style: 'font-family: monospace;' }, c.course_id),
-              el('td', {}, c.title),
-              el('td', {},
-                el('div', { style: 'display: flex; gap: 0.35rem;' },
-                  el('span', { className: `pill ${c.view ? 'yes' : 'no'}` }, 'view'),
-                  el('span', { className: `pill ${c.edit ? 'yes' : 'no'}` }, 'edit'),
-                  el('span', { className: `pill ${c.delete ? 'yes' : 'no'}` }, 'delete')
-                )
-              ),
-              el('td', {},
-                el('button', {
-                  onClick: () => {
-                    state.drawerCourse = c;
-                    renderTraceDrawer();
-                  }
-                }, 'Trace')
-              )
-            )
-          ))
-        );
-        listCard.appendChild(table);
-      }
-    }
-
-    async function renderAdminAuditTab(container) {
-      let filterDecision = '';
-      const card = el('div', { className: 'card' });
-      container.appendChild(card);
-
-      const filterBar = el('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;' },
-        el('div', { style: 'display: flex; gap: 1rem; align-items: center;' },
-          el('label', { style: 'font-size: 0.875rem;' }, 'Filter Decision:'),
-          el('select', {
-            onChange: (e) => {
-              filterDecision = e.target.value;
-              loadLogs();
-            }
-          },
-            el('option', { value: '' }, 'All Decisions'),
-            el('option', { value: 'ALLOW' }, 'ALLOW'),
-            el('option', { value: 'DENY' }, 'DENY')
-          ),
-          el('button', { onClick: () => loadLogs() }, 'Refresh')
-        ),
-        el('button', {
-          className: 'primary',
-          onClick: async () => {
-            const token = sessionStorage.getItem('access_token');
-            const q = filterDecision ? `&decision=${filterDecision}` : '';
-            const res = await fetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/audit-logs?format=csv${q}`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-              const blob = await res.blob();
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `audit-${state.selectedOrgId}.csv`;
-              a.click();
-              window.URL.revokeObjectURL(url);
-            } else {
-              alert('CSV export failed');
-            }
-          }
-        }, 'Export CSV')
-      );
-      card.appendChild(filterBar);
-
-      const tableContainer = el('div');
-      card.appendChild(tableContainer);
-
-      async function loadLogs() {
-        tableContainer.textContent = 'Loading logs...';
-        try {
-          const q = filterDecision ? `&decision=${filterDecision}` : '';
-          const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/audit-logs?limit=50${q}`);
-          if (res.ok) {
-            const data = await res.json();
-            tableContainer.textContent = '';
-            if (data.logs.length === 0) {
-              tableContainer.appendChild(el('p', { style: 'color: var(--text-muted);' }, 'No audit logs found.'));
-              return;
-            }
-            const table = el('table', {},
-              el('thead', {},
-                el('tr', {},
-                  el('th', {}, 'Time'),
-                  el('th', {}, 'User Sub'),
-                  el('th', {}, 'Action'),
-                  el('th', {}, 'Resource'),
-                  el('th', {}, 'Decision'),
-                  el('th', {}, 'Context')
-                )
-              ),
-              el('tbody', {}, ...data.logs.map(log => {
-                let ctxStr = '';
-                try {
-                  const ctx = typeof log.context === 'string' ? JSON.parse(log.context) : log.context;
-                  ctxStr = ctx?.ip ? `IP: ${ctx.ip}` : '';
-                } catch (e) {}
-
-                return el('tr', {},
-                  el('td', {}, new Date(log.created_at).toLocaleString()),
-                  el('td', {}, log.user_sub),
-                  el('td', {}, log.action),
-                  el('td', {}, log.resource_id),
-                  el('td', {}, el('span', { className: `pill ${log.decision === 'ALLOW' ? 'yes' : 'no'}` }, log.decision)),
-                  el('td', { style: 'font-size: 0.75rem; color: var(--text-muted);' }, ctxStr)
-                );
-              }))
-            );
-            tableContainer.appendChild(table);
-          }
-        } catch (e) {
-          tableContainer.textContent = 'Error loading logs.';
-        }
-      }
-
-      loadLogs();
-    }
-
-    async function renderTraceDrawer() {
-      const existing = document.getElementById('trace-drawer');
-      if (existing) existing.remove();
-
-      const course = state.drawerCourse;
-      if (!course) return;
-
-      const content = el('div', { className: 'drawer-content' },
-        el('div', { style: 'display: flex; justify-content: space-between; align-items: center;' },
-          el('h3', {}, 'Access Evaluation Trace'),
-          el('button', {
-            onClick: () => {
-              state.drawerCourse = null;
-              const d = document.getElementById('trace-drawer');
-              if (d) d.remove();
-            }
-          }, 'Close')
-        ),
-        el('div', {},
-          el('h4', {}, course.title),
-          el('p', { style: 'color: var(--text-muted); font-size: 0.8rem;' }, course.course_id)
-        ),
-        el('div', { id: 'trace-steps-container' }, 'Evaluating policy trace...')
-      );
-
-      const backdrop = el('div', {
-        id: 'trace-drawer',
-        className: 'drawer-backdrop',
-        onClick: (e) => {
-          if (e.target === backdrop) {
-            state.drawerCourse = null;
-            backdrop.remove();
-          }
-        }
-      }, content);
-
-      document.body.appendChild(backdrop);
-
-      try {
-        const res = await apiFetch(`/api/orgs/${encodeURIComponent(state.selectedOrgId)}/courses/${encodeURIComponent(course.course_id)}/trace`);
-        const stepsContainer = document.getElementById('trace-steps-container');
-        if (stepsContainer && res.ok) {
-          const data = await res.json();
-          stepsContainer.textContent = '';
-
-          for (const s of data.steps) {
-            stepsContainer.appendChild(
-              el('div', { className: `step-item ${s.passed ? 'pass' : 'fail'}` },
-                el('div', { style: 'font-size: 1.25rem;' }, s.passed ? '✓' : '✗'),
-                el('div', {},
-                  el('div', { style: 'font-weight: 600; text-transform: capitalize;' }, s.step.replace(/_/g, ' ')),
-                  el('div', { style: 'font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;' }, s.detail)
-                )
-              )
-            );
-          }
-
-          stepsContainer.appendChild(
-            el('div', { className: 'card', style: 'margin-top: 1rem;' },
-              el('h5', { style: 'margin-bottom: 0.5rem;' }, 'Final Effective Access'),
-              el('div', { style: 'display: flex; gap: 0.5rem;' },
-                el('span', { className: `pill ${data.decision.can_view ? 'yes' : 'no'}` }, 'can_view'),
-                el('span', { className: `pill ${data.decision.can_edit ? 'yes' : 'no'}` }, 'can_edit'),
-                el('span', { className: `pill ${data.decision.can_delete ? 'yes' : 'no'}` }, 'can_delete')
-              )
-            )
-          );
-        }
-      } catch (e) {
-        const sc = document.getElementById('trace-steps-container');
-        if (sc) sc.textContent = 'Failed to load policy evaluation steps.';
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', init);
-  </script>
+window.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>

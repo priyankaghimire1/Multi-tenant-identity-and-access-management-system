@@ -1,0 +1,51 @@
+{
+  "realm": "acme-idp",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "accessTokenLifespan": 300,
+  "clients": [
+    {
+      "clientId": "dat-federation",
+      "name": "DAT Gateway Federation Client",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "your-secret-value",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8081/realms/dat/broker/acme-okta/endpoint"
+      ],
+      "webOrigins": []
+    }
+  ],
+  "users": [
+    {
+      "id": "acme-alice-0001",
+      "username": "acme-alice",
+      "email": "alice@acme.edu",
+      "firstName": "Alice",
+      "lastName": "Acme-Employee",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ]
+    },
+    {
+      "id": "acme-bob-0002",
+      "username": "acme-bob",
+      "email": "bob@acme.edu",
+      "firstName": "Bob",
+      "lastName": "Acme-Employee",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ]
+    }
+  ]
+}

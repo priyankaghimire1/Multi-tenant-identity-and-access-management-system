@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS organizations (
 
 CREATE TABLE IF NOT EXISTS user_profiles (
     sub VARCHAR(255) PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) NOT NULL,
     first_name VARCHAR(128),
     last_name VARCHAR(128),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -20,11 +20,11 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 -- REMOVED the REFERENCES user_profiles(sub) constraint
 CREATE TABLE IF NOT EXISTS tenant_memberships (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_sub VARCHAR(255) NOT NULL, 
+    user_sub VARCHAR(255) NOT NULL,
     org_id VARCHAR(128) REFERENCES organizations(id) ON DELETE CASCADE,
     role VARCHAR(50) NOT NULL,
     is_suspended BOOLEAN NOT NULL DEFAULT FALSE,
-    session_revoked_at TIMESTAMPTZ DEFAULT NULL,
+    session_revoked_at TIMESTAMPTZ DEFAULT NULL,   -- ← add this line
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_sub, org_id, role)
 );
@@ -66,3 +66,14 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     context JSONB
 );
 CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp);
+
+-- Temporary AI Agent Delegations
+CREATE TABLE IF NOT EXISTS agent_delegations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_sub VARCHAR(255) NOT NULL,
+    agent_id VARCHAR(255) NOT NULL,
+    org_id VARCHAR(128) REFERENCES organizations(id) ON DELETE CASCADE,
+    scopes JSONB NOT NULL, -- e.g., ["course:read", "course:edit"]
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);

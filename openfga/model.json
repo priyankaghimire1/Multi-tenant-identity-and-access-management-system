@@ -9,24 +9,27 @@
     {
       "type": "organization",
       "relations": {
-        "platform": {
-          "this": {}
+        "platform": { "this": {} },
+
+        "admin": { "this": {} },
+        "instructor": { "this": {} },
+        "learner": { "this": {} },
+
+        "suspended": { "this": {} },
+        "tenant_active": { "this": {} },
+
+        "mfa_verified": { "this": {} },
+
+        "super_admin": {
+          "tupleToUserset": {
+            "computedUserset": { "relation": "super_admin" },
+            "tupleset": { "relation": "platform" }
+          }
         },
-        "admin": {
-          "this": {}
+        "can_manage": {
+          "computedUserset": { "relation": "super_admin" }
         },
-        "instructor": {
-          "this": {}
-        },
-        "learner": {
-          "this": {}
-        },
-        "suspended": {
-          "this": {}
-        },
-        "tenant_active": {
-          "this": {}
-        },
+
         "live_admin": {
           "difference": {
             "base": { "computedUserset": { "relation": "admin" } },
@@ -45,6 +48,7 @@
             "subtract": { "computedUserset": { "relation": "suspended" } }
           }
         },
+
         "org_admin": {
           "intersection": {
             "child": [
@@ -69,6 +73,7 @@
             ]
           }
         },
+
         "org_member": {
           "union": {
             "child": [
@@ -81,24 +86,15 @@
       },
       "metadata": {
         "relations": {
-          "platform": {
-            "directly_related_user_types": [{ "type": "platform" }]
-          },
-          "admin": {
-            "directly_related_user_types": [{ "type": "user" }]
-          },
-          "instructor": {
-            "directly_related_user_types": [{ "type": "user" }]
-          },
-          "learner": {
-            "directly_related_user_types": [{ "type": "user" }]
-          },
-          "suspended": {
-            "directly_related_user_types": [{ "type": "user" }]
-          },
-          "tenant_active": {
-            "directly_related_user_types": [{ "type": "user", "wildcard": {} }]
-          },
+          "platform": { "directly_related_user_types": [{ "type": "platform" }] },
+          "admin": { "directly_related_user_types": [{ "type": "user" }] },
+          "instructor": { "directly_related_user_types": [{ "type": "user" }] },
+          "learner": { "directly_related_user_types": [{ "type": "user" }] },
+          "suspended": { "directly_related_user_types": [{ "type": "user" }] },
+          "tenant_active": { "directly_related_user_types": [{ "type": "user", "wildcard": {} }] },
+          "mfa_verified": { "directly_related_user_types": [{ "type": "user" }] },
+          "super_admin": { "directly_related_user_types": [] },
+          "can_manage": { "directly_related_user_types": [] },
           "live_admin": { "directly_related_user_types": [] },
           "live_instructor": { "directly_related_user_types": [] },
           "live_learner": { "directly_related_user_types": [] },
@@ -138,17 +134,27 @@
           }
         },
         "can_delete": {
-          "tupleToUserset": {
-            "computedUserset": { "relation": "org_admin" },
-            "tupleset": { "relation": "org" }
+          "intersection": {
+            "child": [
+              {
+                "tupleToUserset": {
+                  "computedUserset": { "relation": "org_admin" },
+                  "tupleset": { "relation": "org" }
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "computedUserset": { "relation": "mfa_verified" },
+                  "tupleset": { "relation": "org" }
+                }
+              }
+            ]
           }
         }
       },
       "metadata": {
         "relations": {
-          "org": {
-            "directly_related_user_types": [{ "type": "organization" }]
-          },
+          "org": { "directly_related_user_types": [{ "type": "organization" }] },
           "can_view": { "directly_related_user_types": [] },
           "can_edit": { "directly_related_user_types": [] },
           "can_delete": { "directly_related_user_types": [] }
@@ -163,12 +169,8 @@
       },
       "metadata": {
         "relations": {
-          "super_admin": {
-            "directly_related_user_types": [{ "type": "user" }]
-          },
-          "root": {
-            "directly_related_user_types": [{ "type": "organization" }]
-          }
+          "super_admin": { "directly_related_user_types": [{ "type": "user" }] },
+          "root": { "directly_related_user_types": [{ "type": "organization" }] }
         }
       }
     }

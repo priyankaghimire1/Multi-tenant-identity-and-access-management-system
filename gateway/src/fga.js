@@ -16,7 +16,7 @@ const fgaClient = new OpenFgaClient({
  * Checks ReBAC permissions in OpenFGA
  */
 
-async function checkRelation(user, relation, objectId) {
+async function checkRelation(user, relation, objectId, contextualTuples = []) {
   try {
     const result = await fgaClient.check({
       user,
@@ -47,8 +47,8 @@ async function checkRelation(user, relation, objectId) {
 }
 
 
-async function checkPermission(userSub, relation, objectId) {
-  return checkRelation(`user:${userSub}`, relation, objectId);
+async function checkPermission(userSub, relation, objectId, contextualTuples = []) {
+  return checkRelation(`user:${userSub}`, relation, objectId, contextualTuples);
 }
 
 /**

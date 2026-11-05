@@ -1,4 +1,3 @@
-// gateway/src/index.js
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -14,7 +13,6 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 const AGENT_SECRET = process.env.AGENT_SECRET || 'super-secret-agent-key';
 
-// Auto-migrate: Ensure session_revoked_at and agent_delegations exist
 (async () => {
   try {
     await pool.query(`

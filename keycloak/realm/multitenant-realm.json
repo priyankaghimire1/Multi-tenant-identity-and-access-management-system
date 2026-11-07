@@ -33,7 +33,89 @@
       "webOrigins": [
         "http://localhost:3000",
         "+"
+      ],
+      "protocolMappers": [
+        {
+          "name": "org_hint",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "org_hint",
+            "claim.name": "org_hint",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "idp",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "idp",
+            "claim.name": "idp",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
       ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "acme-okta",
+      "displayName": "Acme Okta",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "dat-federation",
+        "clientSecret": "your-secret-value",
+        "clientAuthMethod": "client_secret_post",
+        "authorizationUrl": "http://localhost:8083/realms/acme-idp/protocol/openid-connect/auth",
+        "logoutUrl": "http://localhost:8083/realms/acme-idp/protocol/openid-connect/logout",
+        "tokenUrl": "http://acme-idp:8080/realms/acme-idp/protocol/openid-connect/token",
+        "userInfoUrl": "http://acme-idp:8080/realms/acme-idp/protocol/openid-connect/userinfo",
+        "jwksUrl": "http://acme-idp:8080/realms/acme-idp/protocol/openid-connect/certs",
+        "useJwksUrl": "true",
+        "validateSignature": "true",
+        "defaultScope": "openid email profile",
+        "pkceEnabled": "true",
+        "pkceMethod": "S256",
+        "disableUserInfo": "true",
+        "syncMode": "IMPORT"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "acme-org-hint",
+      "identityProviderAlias": "acme-okta",
+      "identityProviderMapper": "hardcoded-user-session-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "attribute": "org_hint",
+        "attribute.value": "acme"
+      }
+    },
+    {
+      "name": "acme-idp-marker",
+      "identityProviderAlias": "acme-okta",
+      "identityProviderMapper": "hardcoded-user-session-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "attribute": "idp",
+        "attribute.value": "acme-okta"
+      }
     }
   ],
   "roles": {

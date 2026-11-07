@@ -17,14 +17,14 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- REMOVED the REFERENCES user_profiles(sub) constraint
+
 CREATE TABLE IF NOT EXISTS tenant_memberships (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_sub VARCHAR(255) NOT NULL,
     org_id VARCHAR(128) REFERENCES organizations(id) ON DELETE CASCADE,
     role VARCHAR(50) NOT NULL,
     is_suspended BOOLEAN NOT NULL DEFAULT FALSE,
-    session_revoked_at TIMESTAMPTZ DEFAULT NULL,   -- ← add this line
+    session_revoked_at TIMESTAMPTZ DEFAULT NULL,  
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_sub, org_id, role)
 );

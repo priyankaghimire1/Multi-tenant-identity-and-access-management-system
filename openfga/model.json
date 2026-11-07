@@ -96,7 +96,7 @@
           "instructor": { "directly_related_user_types": [{ "type": "user" }] },
           "learner": { "directly_related_user_types": [{ "type": "user" }] },
           "suspended": { "directly_related_user_types": [{ "type": "user" }] },
-          "tenant_active": { "directly_related_user_types": [{ "type": "user" }] }
+          "tenant_active": { "directly_related_user_types": [{ "type": "user", "wildcard": {} }] }
         }
       }
     },

@@ -53,6 +53,11 @@ async function checkPermission(userSub, relation, objectId, contextualTuples = [
 
 /**
  * Background worker to consume transactional outbox events and mirror them to OpenFGA
+ *
+ * NOTE: The @openfga/sdk requires the `{ writes: { tuple_keys: [...] } }` /
+ * `{ deletes: { tuple_keys: [...] } }` envelope. Calling `writeTuples([...])`
+ * or `deleteTuples([...])` with a bare array does NOT work — it silently
+ * no-ops, which is why tuples were never being mirrored before.
  */
 async function processOutboxQueue() {
   const client = await pool.connect();
@@ -63,24 +68,33 @@ async function processOutboxQueue() {
 
     for (const event of events) {
       const { action, user, relation, object } = event.payload;
+      const tuple = { user, relation, object };
 
       try {
         if (action === 'WRITE') {
-          await fgaClient.writeTuples([{ user, relation, object }]);
+          await fgaClient.write({ writes: { tuple_keys: [tuple] } });
         } else if (action === 'DELETE') {
-          await fgaClient.deleteTuples([{ user, relation, object }]);
+          await fgaClient.write({ deletes: { tuple_keys: [tuple] } });
+        } else {
+          console.warn(`[Outbox] Unknown action "${action}" for event ${event.id}`);
         }
       } catch (err) {
-        // If it already exists, just ignore it and mark as processed.
-        // Do NOT crash the whole loop.
-        if (err.message && (err.message.includes('already exists') || err.statusCode === 400)) {
-          console.log(`[Outbox] Tuple exists, skipping: ${user} ${relation} ${object}`);
+        // OpenFGA returns 400 for "tuple already exists" (on write) and
+        // "tuple does not exist" (on delete). Both are idempotent no-ops.
+        const status = err.statusCode ?? err.status;
+        if (status === 400) {
+          console.log(`[Outbox] Tuple already in desired state: ${user} ${relation} ${object}`);
         } else {
-          console.error(`[Outbox] Failed to sync tuple ${user} ${relation} ${object}:`, err.message);
+          // Genuine failure — do NOT mark processed, leave it for retry.
+          console.error(
+            `[Outbox] Failed to sync tuple ${user} ${relation} ${object}:`,
+            err.message
+          );
+          continue;
         }
       }
 
-      // Always mark as processed so the queue doesn't get stuck
+      // Only mark processed after success (or a genuine idempotent no-op).
       await client.query('UPDATE outbox_events SET processed = TRUE WHERE id = $1', [event.id]);
     }
   } catch (err) {

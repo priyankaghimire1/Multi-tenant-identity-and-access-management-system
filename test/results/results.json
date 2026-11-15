@@ -1,0 +1,2744 @@
+{
+  "summary": {
+    "run_id": "8090af",
+    "date": "2026-11-15T09:08:06+0530",
+    "gateway": "http://localhost:3000",
+    "counts": {
+      "passed": 62,
+      "xfailed": 11,
+      "failed": 1
+    },
+    "total": 74,
+    "timings": [
+      {
+        "group": "propagation",
+        "name": "member suspended -> access denied",
+        "n": 8,
+        "p50": 911.9,
+        "p95": 1000.4,
+        "max": 1000.4,
+        "mean": 921.7
+      },
+      {
+        "group": "propagation",
+        "name": "member reinstated -> access restored",
+        "n": 8,
+        "p50": 911.7,
+        "p95": 920.5,
+        "max": 920.5,
+        "mean": 900.0
+      },
+      {
+        "group": "propagation",
+        "name": "tenant suspended -> all members denied",
+        "n": 8,
+        "p50": 933.6,
+        "p95": 1061.0,
+        "max": 1061.0,
+        "mean": 946.1
+      },
+      {
+        "group": "propagation",
+        "name": "learner -> instructor: edit granted",
+        "n": 8,
+        "p50": 906.8,
+        "p95": 965.0,
+        "max": 965.0,
+        "mean": 915.4
+      },
+      {
+        "group": "propagation",
+        "name": "instructor -> learner: edit revoked",
+        "n": 8,
+        "p50": 905.6,
+        "p95": 985.3,
+        "max": 985.3,
+        "mean": 911.1
+      },
+      {
+        "group": "latency",
+        "name": "allowed course read",
+        "n": 100,
+        "p50": 8.6,
+        "p95": 11.9,
+        "max": 82.6,
+        "mean": 9.6
+      },
+      {
+        "group": "latency",
+        "name": "denied course read (outsider)",
+        "n": 100,
+        "p50": 7.9,
+        "p95": 10.7,
+        "max": 59.9,
+        "mean": 8.5
+      },
+      {
+        "group": "latency",
+        "name": "identity (/api/me)",
+        "n": 100,
+        "p50": 6.6,
+        "p95": 9.5,
+        "max": 65.5,
+        "mean": 7.4
+      },
+      {
+        "group": "latency",
+        "name": "access trace (9 FGA checks)",
+        "n": 100,
+        "p50": 31.7,
+        "p95": 53.3,
+        "max": 95.3,
+        "mean": 34.7
+      }
+    ]
+  },
+  "tests": [
+    {
+      "test": "test_01_scoped_memberships.py::test_me_returns_two_scoped_memberships_and_no_global_roles",
+      "outcome": "passed",
+      "seconds": 0.035,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_token_carries_a_realm_role_but_it_confers_nothing",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_overview_scopes_role_per_org",
+      "outcome": "passed",
+      "seconds": 0.054,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_non_admin_cannot_use_admin_endpoints_in_either_org[A]",
+      "outcome": "passed",
+      "seconds": 0.118,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_non_admin_cannot_use_admin_endpoints_in_either_org[B]",
+      "outcome": "passed",
+      "seconds": 0.127,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_admin_member_list_has_exactly_one_scoped_row_per_org",
+      "outcome": "passed",
+      "seconds": 0.028,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_trace_permissions_are_scoped_per_org",
+      "outcome": "passed",
+      "seconds": 0.032,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_trace_rejects_a_course_from_a_different_org",
+      "outcome": "passed",
+      "seconds": 0.017,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_org_id_with_and_without_prefix_are_equivalent",
+      "outcome": "passed",
+      "seconds": 0.052,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_realm_role_tenant_admin_gives_no_power_in_an_org_without_membership",
+      "outcome": "passed",
+      "seconds": 0.042,
+      "reason": ""
+    },
+    {
+      "test": "test_01_scoped_memberships.py::test_platform_admin_realm_role_gives_no_tenant_access",
+      "outcome": "passed",
+      "seconds": 0.026,
+      "reason": ""
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_duplicate_membership_is_rejected_and_first_role_survives",
+      "outcome": "passed",
+      "seconds": 0.093,
+      "reason": ""
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_cross_org_admin_cannot_assign_roles_in_another_org",
+      "outcome": "passed",
+      "seconds": 0.1,
+      "reason": ""
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_adding_a_member_to_own_org_does_not_touch_the_other_org",
+      "outcome": "passed",
+      "seconds": 0.793,
+      "reason": ""
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_outsider_cannot_read_other_org",
+      "outcome": "passed",
+      "seconds": 0.023,
+      "reason": ""
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_role_change_leaves_exactly_one_row_and_one_tuple",
+      "outcome": "passed",
+      "seconds": 0.858,
+      "reason": ""
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_invalid_role_is_rejected_and_nothing_is_written",
+      "outcome": "passed",
+      "seconds": 0.083,
+      "reason": ""
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_concurrent_conflicting_adds_never_create_two_roles",
+      "outcome": "xfailed",
+      "seconds": 11.361,
+      "reason": "KNOWN GAP: POST memberships is SELECT-then-INSERT with no lock and UNIQUE(user_sub, org_id, role) omits the role-free key, so concurrent adds create two roles (12/12 trials)"
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_malformed_user_sub_is_rejected_at_the_api",
+      "outcome": "xfailed",
+      "seconds": 0.565,
+      "reason": "KNOWN GAP: POST memberships accepts any user_sub with no existence/format check; the outbox then silently drops the rejected tuple"
+    },
+    {
+      "test": "test_02_membership_integrity.py::test_outbox_never_drops_an_event_it_failed_to_apply",
+      "outcome": "xfailed",
+      "seconds": 1.794,
+      "reason": "KNOWN GAP: outbox marks events processed even when OpenFGA rejects the tuple (any HTTP 400 is treated as 'already exists')"
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_real_pkce_flow_yields_a_token_the_gateway_accepts",
+      "outcome": "passed",
+      "seconds": 0.214,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_wrong_verifier_is_rejected_for_a_real_code",
+      "outcome": "passed",
+      "seconds": 0.236,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_missing_verifier_is_rejected_for_a_challenge_bound_code",
+      "outcome": "passed",
+      "seconds": 0.158,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_authorization_request_without_code_challenge_issues_no_code",
+      "outcome": "passed",
+      "seconds": 0.034,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_plain_challenge_method_is_refused",
+      "outcome": "passed",
+      "seconds": 0.029,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_authorization_code_cannot_be_replayed",
+      "outcome": "passed",
+      "seconds": 0.212,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_code_is_bound_to_the_redirect_uri_used_at_authorization",
+      "outcome": "passed",
+      "seconds": 0.155,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_implicit_flow_is_disabled",
+      "outcome": "passed",
+      "seconds": 0.032,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_foreign_host_redirect_uri_is_rejected",
+      "outcome": "passed",
+      "seconds": 0.045,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_same_origin_unregistered_path_is_rejected",
+      "outcome": "xfailed",
+      "seconds": 0.033,
+      "reason": "KNOWN GAP: realm registers the wildcard http://localhost:3000/*, so any path on the app origin is an accepted callback (requirement: exact match)"
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_token_issuer_is_the_configured_realm_and_authorized_party_is_the_client",
+      "outcome": "passed",
+      "seconds": 0.177,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_gateway_rejects_a_valid_token_from_another_realm",
+      "outcome": "passed",
+      "seconds": 0.031,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_gateway_rejects_alg_none_and_hs256_forgeries",
+      "outcome": "passed",
+      "seconds": 0.036,
+      "reason": ""
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_gateway_rejects_a_token_issued_to_a_different_client",
+      "outcome": "xfailed",
+      "seconds": 0.301,
+      "reason": "KNOWN GAP: gateway verifies the signature only; it never checks aud/azp, so a token minted for ANY client in the realm is accepted"
+    },
+    {
+      "test": "test_03_pkce_oidc.py::test_password_grant_is_disabled_on_the_public_client",
+      "outcome": "failed",
+      "seconds": 0.052,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course",
+      "outcome": "passed",
+      "seconds": 0.114,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_allowed_own_resource",
+      "outcome": "passed",
+      "seconds": 0.013,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_denied_changed_tenant_resource",
+      "outcome": "passed",
+      "seconds": 0.039,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_denied_member_admin_on_another_tenant",
+      "outcome": "passed",
+      "seconds": 0.088,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_only_tenant_admins_can_create_courses_and_only_in_their_org",
+      "outcome": "passed",
+      "seconds": 0.163,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_tenant_admin_cannot_use_platform_apis",
+      "outcome": "passed",
+      "seconds": 0.058,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_suspended_membership_is_denied_then_restored",
+      "outcome": "passed",
+      "seconds": 4.268,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_suspended_admin_loses_admin_power_everywhere",
+      "outcome": "passed",
+      "seconds": 3.794,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants",
+      "outcome": "passed",
+      "seconds": 5.715,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_only_the_platform_admin_can_suspend_a_tenant",
+      "outcome": "passed",
+      "seconds": 0.08,
+      "reason": ""
+    },
+    {
+      "test": "test_04_authorization_boundaries.py::test_postgres_and_openfga_agree_for_every_object_this_module_created",
+      "outcome": "passed",
+      "seconds": 1.131,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_global_session_revocation_kills_only_that_session",
+      "outcome": "passed",
+      "seconds": 0.589,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_org_scoped_cutoff_rejects_tokens_issued_before_it",
+      "outcome": "passed",
+      "seconds": 0.499,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_org_scoped_cutoff_also_applies_to_course_reads",
+      "outcome": "xfailed",
+      "seconds": 1.817,
+      "reason": "KNOWN GAP: the org-scoped cutoff is enforced only by requirePermission routes; course reads and /overview ignore it"
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_denied_request_is_audited_against_the_real_org_and_forged_header_is_only_a_claim",
+      "outcome": "passed",
+      "seconds": 0.059,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_allowed_admin_action_is_audited",
+      "outcome": "passed",
+      "seconds": 0.045,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_decision_filter_and_csv_export_agree_with_json",
+      "outcome": "passed",
+      "seconds": 0.059,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_audit_log_is_tenant_isolated",
+      "outcome": "passed",
+      "seconds": 0.058,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_course_reads_are_audited",
+      "outcome": "xfailed",
+      "seconds": 0.036,
+      "reason": "KNOWN GAP: GET /api/courses/:id never calls recordAudit, so course reads (the most common decision) leave no audit row"
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_agent_with_read_scope_reads_as_its_delegator",
+      "outcome": "passed",
+      "seconds": 0.043,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_agent_without_read_scope_is_denied",
+      "outcome": "passed",
+      "seconds": 0.041,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_agent_cannot_reach_a_course_outside_its_delegated_org",
+      "outcome": "passed",
+      "seconds": 0.061,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_agent_never_exceeds_its_delegators_rights",
+      "outcome": "passed",
+      "seconds": 0.046,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_tampered_agent_token_is_rejected",
+      "outcome": "passed",
+      "seconds": 0.056,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_agent_token_is_not_a_human_session",
+      "outcome": "passed",
+      "seconds": 0.202,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_expired_agent_token_stops_working",
+      "outcome": "passed",
+      "seconds": 1.411,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_agent_loses_access_when_its_delegator_is_suspended",
+      "outcome": "passed",
+      "seconds": 3.365,
+      "reason": ""
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_default_agent_secret_does_not_allow_forged_delegations",
+      "outcome": "xfailed",
+      "seconds": 0.044,
+      "reason": "KNOWN GAP: AGENT_SECRET falls back to a hard-coded default and the delegator claim is trusted from the token, so anyone who knows the default can act as any user"
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_delegation_requires_membership_of_the_org",
+      "outcome": "xfailed",
+      "seconds": 0.014,
+      "reason": "KNOWN GAP: POST /api/agents/delegate does not check that the caller belongs to the org it delegates"
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_delegation_duration_is_capped",
+      "outcome": "xfailed",
+      "seconds": 0.033,
+      "reason": "KNOWN GAP: delegation duration is unbounded"
+    },
+    {
+      "test": "test_05_revocation_audit_agents.py::test_delegation_scopes_are_validated",
+      "outcome": "xfailed",
+      "seconds": 0.032,
+      "reason": "KNOWN GAP: delegation scopes are not validated against an allow-list"
+    },
+    {
+      "test": "test_06_timings.py::test_revocation_propagation_delay",
+      "outcome": "passed",
+      "seconds": 15.088,
+      "reason": ""
+    },
+    {
+      "test": "test_06_timings.py::test_tenant_suspension_propagation_delay",
+      "outcome": "passed",
+      "seconds": 15.027,
+      "reason": ""
+    },
+    {
+      "test": "test_06_timings.py::test_role_change_propagation_delay",
+      "outcome": "passed",
+      "seconds": 15.114,
+      "reason": ""
+    },
+    {
+      "test": "test_06_timings.py::test_propagation_stays_within_budget",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "reason": ""
+    },
+    {
+      "test": "test_06_timings.py::test_request_latency[allowed course read-carol-<lambda>-200]",
+      "outcome": "passed",
+      "seconds": 1.066,
+      "reason": ""
+    },
+    {
+      "test": "test_06_timings.py::test_request_latency[denied course read (outsider)-dave-<lambda>-403]",
+      "outcome": "passed",
+      "seconds": 0.941,
+      "reason": ""
+    },
+    {
+      "test": "test_06_timings.py::test_request_latency[identity (/api/me)-carol-<lambda>-200]",
+      "outcome": "passed",
+      "seconds": 0.819,
+      "reason": ""
+    },
+    {
+      "test": "test_06_timings.py::test_request_latency[access trace (9 FGA checks)-carol-<lambda>-200]",
+      "outcome": "passed",
+      "seconds": 3.896,
+      "reason": ""
+    }
+  ],
+  "samples": [
+    {
+      "group": "propagation",
+      "name": "member suspended -> access denied",
+      "ms": 921.8
+    },
+    {
+      "group": "propagation",
+      "name": "member reinstated -> access restored",
+      "ms": 883.4
+    },
+    {
+      "group": "propagation",
+      "name": "member suspended -> access denied",
+      "ms": 1000.4
+    },
+    {
+      "group": "propagation",
+      "name": "member reinstated -> access restored",
+      "ms": 828.5
+    },
+    {
+      "group": "propagation",
+      "name": "member suspended -> access denied",
+      "ms": 911.9
+    },
+    {
+      "group": "propagation",
+      "name": "member reinstated -> access restored",
+      "ms": 916.5
+    },
+    {
+      "group": "propagation",
+      "name": "member suspended -> access denied",
+      "ms": 923.0
+    },
+    {
+      "group": "propagation",
+      "name": "member reinstated -> access restored",
+      "ms": 920.5
+    },
+    {
+      "group": "propagation",
+      "name": "member suspended -> access denied",
+      "ms": 905.0
+    },
+    {
+      "group": "propagation",
+      "name": "member reinstated -> access restored",
+      "ms": 911.1
+    },
+    {
+      "group": "propagation",
+      "name": "member suspended -> access denied",
+      "ms": 935.9
+    },
+    {
+      "group": "propagation",
+      "name": "member reinstated -> access restored",
+      "ms": 912.2
+    },
+    {
+      "group": "propagation",
+      "name": "member suspended -> access denied",
+      "ms": 897.5
+    },
+    {
+      "group": "propagation",
+      "name": "member reinstated -> access restored",
+      "ms": 915.8
+    },
+    {
+      "group": "propagation",
+      "name": "member suspended -> access denied",
+      "ms": 878.1
+    },
+    {
+      "group": "propagation",
+      "name": "member reinstated -> access restored",
+      "ms": 911.7
+    },
+    {
+      "group": "propagation",
+      "name": "tenant suspended -> all members denied",
+      "ms": 931.9
+    },
+    {
+      "group": "propagation",
+      "name": "tenant suspended -> all members denied",
+      "ms": 960.0
+    },
+    {
+      "group": "propagation",
+      "name": "tenant suspended -> all members denied",
+      "ms": 865.9
+    },
+    {
+      "group": "propagation",
+      "name": "tenant suspended -> all members denied",
+      "ms": 948.5
+    },
+    {
+      "group": "propagation",
+      "name": "tenant suspended -> all members denied",
+      "ms": 938.4
+    },
+    {
+      "group": "propagation",
+      "name": "tenant suspended -> all members denied",
+      "ms": 929.3
+    },
+    {
+      "group": "propagation",
+      "name": "tenant suspended -> all members denied",
+      "ms": 933.6
+    },
+    {
+      "group": "propagation",
+      "name": "tenant suspended -> all members denied",
+      "ms": 1061.0
+    },
+    {
+      "group": "propagation",
+      "name": "learner -> instructor: edit granted",
+      "ms": 946.1
+    },
+    {
+      "group": "propagation",
+      "name": "instructor -> learner: edit revoked",
+      "ms": 869.3
+    },
+    {
+      "group": "propagation",
+      "name": "learner -> instructor: edit granted",
+      "ms": 965.0
+    },
+    {
+      "group": "propagation",
+      "name": "instructor -> learner: edit revoked",
+      "ms": 985.3
+    },
+    {
+      "group": "propagation",
+      "name": "learner -> instructor: edit granted",
+      "ms": 796.1
+    },
+    {
+      "group": "propagation",
+      "name": "instructor -> learner: edit revoked",
+      "ms": 917.2
+    },
+    {
+      "group": "propagation",
+      "name": "learner -> instructor: edit granted",
+      "ms": 897.5
+    },
+    {
+      "group": "propagation",
+      "name": "instructor -> learner: edit revoked",
+      "ms": 905.6
+    },
+    {
+      "group": "propagation",
+      "name": "learner -> instructor: edit granted",
+      "ms": 963.3
+    },
+    {
+      "group": "propagation",
+      "name": "instructor -> learner: edit revoked",
+      "ms": 876.7
+    },
+    {
+      "group": "propagation",
+      "name": "learner -> instructor: edit granted",
+      "ms": 945.3
+    },
+    {
+      "group": "propagation",
+      "name": "instructor -> learner: edit revoked",
+      "ms": 945.5
+    },
+    {
+      "group": "propagation",
+      "name": "learner -> instructor: edit granted",
+      "ms": 903.2
+    },
+    {
+      "group": "propagation",
+      "name": "instructor -> learner: edit revoked",
+      "ms": 880.4
+    },
+    {
+      "group": "propagation",
+      "name": "learner -> instructor: edit granted",
+      "ms": 906.8
+    },
+    {
+      "group": "propagation",
+      "name": "instructor -> learner: edit revoked",
+      "ms": 909.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 10.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 11.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 11.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 82.6
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 16.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 12.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.7
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.4
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.7
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 10.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 10.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.4
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.6
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 11.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.4
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.4
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.6
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 12.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.7
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 6.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.4
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 10.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.6
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.6
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 12.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.3
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.7
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.9
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.4
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 6.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 7.4
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.2
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.1
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 10.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 11.7
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 9.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 10.8
+    },
+    {
+      "group": "latency",
+      "name": "allowed course read",
+      "ms": 10.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 10.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 9.0
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 10.1
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 9.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 11.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 10.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 10.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 10.0
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 11.8
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 59.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.4
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 13.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.4
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.4
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.4
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.1
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.8
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.8
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 9.8
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 11.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.0
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.4
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 9.4
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.1
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.4
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.4
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 5.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.6
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.2
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.3
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.9
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 8.1
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 9.0
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.8
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 7.7
+    },
+    {
+      "group": "latency",
+      "name": "denied course read (outsider)",
+      "ms": 6.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 4.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 8.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.1
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.1
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 8.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 8.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 9.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 9.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.1
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 10.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 65.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.1
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 9.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 18.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 11.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 9.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 8.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 9.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.1
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.1
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.4
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.1
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.9
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 4.6
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 7.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.8
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 6.5
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.3
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.2
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 4.7
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.0
+    },
+    {
+      "group": "latency",
+      "name": "identity (/api/me)",
+      "ms": 5.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 40.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 42.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 42.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 32.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 30.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 61.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 26.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 44.1
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 39.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 25.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 56.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 95.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 23.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 34.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 31.1
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 31.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 51.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 30.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 41.0
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 53.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 18.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 31.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 38.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 26.0
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 32.0
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 42.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 44.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 27.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 25.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 18.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 27.0
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 39.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 53.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 45.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 36.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 30.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 51.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 44.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 36.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 53.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 50.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 49.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 26.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 27.1
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 25.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 42.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 39.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 40.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 56.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 29.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 19.1
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 40.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 25.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 25.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 27.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 37.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 29.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 23.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 30.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 37.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 28.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 41.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 26.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 23.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 24.1
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 34.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 21.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 32.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 38.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 40.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 34.4
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 44.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 24.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 31.1
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 22.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 43.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 40.0
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 28.2
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 23.1
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 33.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 32.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 19.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 23.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 23.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 49.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 29.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 33.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 26.7
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 20.3
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 29.0
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 34.0
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 52.9
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 18.5
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 24.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 23.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 19.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 44.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 22.8
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 25.6
+    },
+    {
+      "group": "latency",
+      "name": "access trace (9 FGA checks)",
+      "ms": 28.5
+    }
+  ]
+}

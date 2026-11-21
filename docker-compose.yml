@@ -169,11 +169,11 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
-      AGENT_SECRET: ${AGENT_SECRET:?set AGENT_SECRET in .env - see .env.example}
-      DATABASE_URL: postgres://${POSTGRES_USER:-dat}:${POSTGRES_PASSWORD:-dat}@postgres:5432/${POSTGRES_DB:-dat}
+      DATABASE_URL: postgres://dat:dat@postgres:5432/dat
       KEYCLOAK_URL: http://keycloak:8081
       KEYCLOAK_REALM: dat
       FGA_API_URL: http://openfga:8080
+      AGENT_SECRET: ${AGENT_SECRET:?Set AGENT_SECRET in .env}
     volumes:
       - fga_ids:/seed:ro
     entrypoint: ["/bin/sh", "-c"]

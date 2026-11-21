@@ -4,16 +4,16 @@ services:
     container_name: iam_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: dat
-      POSTGRES_PASSWORD: dat
-      POSTGRES_DB: dat
+      POSTGRES_USER: ${POSTGRES_USER:-dat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dat}
+      POSTGRES_DB: ${POSTGRES_DB:-dat}
     ports:
       - "5432:5432"
     volumes:
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dat -d dat"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dat} -d ${POSTGRES_DB:-dat}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -23,8 +23,8 @@ services:
     container_name: iam_acme_idp
     command: start-dev --import-realm
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: adminpassword
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-adminpassword}
       KC_HTTP_PORT: 8080
       KC_HOSTNAME: localhost
       KC_HOSTNAME_PORT: 8083
@@ -51,8 +51,8 @@ services:
     container_name: iam_keycloak
     command: start-dev --import-realm
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: adminpassword
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-adminpassword}
       KC_HTTP_PORT: 8081
     ports:
       - "8081:8081"
@@ -139,12 +139,12 @@ services:
         echo "seed: store=$$FGA_STORE_ID model=$$FGA_MODEL_ID"
         exec node scripts/seed.js
     environment:
-      DATABASE_URL: postgres://dat:dat@postgres:5432/dat
+      DATABASE_URL: postgres://${POSTGRES_USER:-dat}:${POSTGRES_PASSWORD:-dat}@postgres:5432/${POSTGRES_DB:-dat}
       FGA_API_URL: http://openfga:8080
       KEYCLOAK_URL: http://keycloak:8081
       KEYCLOAK_ADMIN_URL: http://keycloak:8081
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: adminpassword
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-adminpassword}
       KEYCLOAK_REALM: dat
     volumes:
       - fga_ids:/seed:ro
@@ -169,7 +169,8 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
-      DATABASE_URL: postgres://dat:dat@postgres:5432/dat
+      AGENT_SECRET: ${AGENT_SECRET:?set AGENT_SECRET in .env - see .env.example}
+      DATABASE_URL: postgres://${POSTGRES_USER:-dat}:${POSTGRES_PASSWORD:-dat}@postgres:5432/${POSTGRES_DB:-dat}
       KEYCLOAK_URL: http://keycloak:8081
       KEYCLOAK_REALM: dat
       FGA_API_URL: http://openfga:8080

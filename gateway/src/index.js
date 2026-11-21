@@ -11,7 +11,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-const AGENT_SECRET = process.env.AGENT_SECRET || 'super-secret-agent-key';
+const AGENT_SECRET = process.env.AGENT_SECRET;
+if (!AGENT_SECRET || AGENT_SECRET.length < 32 || AGENT_SECRET.includes('<') || AGENT_SECRET === 'super-secret-agent-key') {
+  console.error('FATAL: AGENT_SECRET must be set to a random string of at least 32 characters (for example: openssl rand -hex 32).');
+  process.exit(1);
+}
 
 (async () => {
   try {

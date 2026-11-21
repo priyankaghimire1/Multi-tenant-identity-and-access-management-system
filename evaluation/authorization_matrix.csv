@@ -1,0 +1,41 @@
+id,group,actor,actor_state,tenant_state,resource,action,expected,rule,nearest_test,coverage,result_run_8090af
+M01,G1 active member,alice,admin,active,course,view,allow,org_member,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M02,G1 active member,alice,admin,active,course,edit,allow,org_instructor or org_admin,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M03,G1 active member,alice,admin,active,course,delete,allow,org_admin,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M04,G1 active member,dave,instructor,active,course,view,allow,org_member,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M05,G1 active member,dave,instructor,active,course,edit,allow,org_instructor or org_admin,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M06,G1 active member,dave,instructor,active,course,delete,deny,org_admin,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M07,G1 active member,carol,learner,active,course,view,allow,org_member,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M08,G1 active member,carol,learner,active,course,edit,deny,org_instructor or org_admin,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M09,G1 active member,carol,learner,active,course,delete,deny,org_admin,test_04_authorization_boundaries.py::test_role_permission_matrix_on_one_course,direct,pass
+M10,G2 suspended member,bob,"admin, suspended",active,course,view,deny,live_<role> = <role> but not suspended,test_04_authorization_boundaries.py::test_suspended_admin_loses_admin_power_everywhere,direct,pass
+M11,G2 suspended member,bob,"admin, suspended",active,course,edit,deny,live_<role> = <role> but not suspended,test_04_authorization_boundaries.py::test_suspended_admin_loses_admin_power_everywhere,indirect,not asserted
+M12,G2 suspended member,bob,"admin, suspended",active,course,delete,deny,live_<role> = <role> but not suspended,test_04_authorization_boundaries.py::test_suspended_admin_loses_admin_power_everywhere,indirect,not asserted
+M13,G2 suspended member,dave,"instructor, suspended",active,course,view,deny,live_<role> = <role> but not suspended,,none,no test
+M14,G2 suspended member,dave,"instructor, suspended",active,course,edit,deny,live_<role> = <role> but not suspended,,none,no test
+M15,G2 suspended member,dave,"instructor, suspended",active,course,delete,deny,live_<role> = <role> but not suspended,,none,no test
+M16,G2 suspended member,carol,"learner, suspended",active,course,view,deny,live_<role> = <role> but not suspended,test_04_authorization_boundaries.py::test_suspended_membership_is_denied_then_restored,direct,pass
+M17,G2 suspended member,carol,"learner, suspended",active,course,edit,deny,live_<role> = <role> but not suspended,test_04_authorization_boundaries.py::test_suspended_membership_is_denied_then_restored,indirect,not asserted
+M18,G2 suspended member,carol,"learner, suspended",active,course,delete,deny,live_<role> = <role> but not suspended,test_04_authorization_boundaries.py::test_suspended_membership_is_denied_then_restored,indirect,not asserted
+M19,G3 suspended tenant,alice,admin,suspended,course,view,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,direct,pass
+M20,G3 suspended tenant,alice,admin,suspended,course,edit,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,indirect,not asserted
+M21,G3 suspended tenant,alice,admin,suspended,course,delete,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,indirect,not asserted
+M22,G3 suspended tenant,dave,instructor,suspended,course,view,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,direct,pass
+M23,G3 suspended tenant,dave,instructor,suspended,course,edit,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,indirect,not asserted
+M24,G3 suspended tenant,dave,instructor,suspended,course,delete,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,indirect,not asserted
+M25,G3 suspended tenant,carol,learner,suspended,course,view,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,direct,pass
+M26,G3 suspended tenant,carol,learner,suspended,course,edit,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,indirect,not asserted
+M27,G3 suspended tenant,carol,learner,suspended,course,delete,deny,org_<role> requires tenant_active,test_04_authorization_boundaries.py::test_suspended_tenant_denies_every_role_and_spares_other_tenants,indirect,not asserted
+M28,G4 cross-tenant,bob,admin of tenant B,active,course,view,deny,no relation to tenant A,test_04_authorization_boundaries.py::test_denied_changed_tenant_resource,indirect,not asserted
+M29,G4 cross-tenant,bob,admin of tenant B,active,course,edit,deny,no relation to tenant A,test_04_authorization_boundaries.py::test_denied_changed_tenant_resource,none,no test
+M30,G4 cross-tenant,bob,admin of tenant B,active,course,delete,deny,no relation to tenant A,test_04_authorization_boundaries.py::test_denied_changed_tenant_resource,none,no test
+M31,G5 platform admin,master,"super_admin, not a member",active,course,view,deny,super_admin is not part of org_member,,none,no test
+M32,G5 platform admin,master,"super_admin, not a member",active,course,edit,deny,super_admin is not part of org_member,,none,no test
+M33,G5 platform admin,master,"super_admin, not a member",active,course,delete,deny,super_admin is not part of org_member,,none,no test
+M34,G6 create course,alice,admin,active,organization,create_course,allow,org_admin on the organization,test_04_authorization_boundaries.py::test_only_tenant_admins_can_create_courses_and_only_in_their_org,direct,pass
+M35,G6 create course,dave,instructor,active,organization,create_course,deny,org_admin on the organization,test_04_authorization_boundaries.py::test_only_tenant_admins_can_create_courses_and_only_in_their_org,direct,pass
+M36,G6 create course,carol,learner,active,organization,create_course,deny,org_admin on the organization,test_04_authorization_boundaries.py::test_only_tenant_admins_can_create_courses_and_only_in_their_org,direct,pass
+M37,G6 create course,bob,admin of tenant B,active,organization,create_course,deny,org_admin on the organization,test_04_authorization_boundaries.py::test_only_tenant_admins_can_create_courses_and_only_in_their_org,direct,pass
+M38,G7 read audit logs,alice,admin,active,organization,read_audit_logs,allow,org_admin on the organization,test_04_authorization_boundaries.py::test_suspended_admin_loses_admin_power_everywhere,indirect,not asserted
+M39,G7 read audit logs,carol,learner,active,organization,read_audit_logs,deny,org_admin on the organization,,none,no test
+M40,G7 read audit logs,bob,admin of tenant B,active,organization,read_audit_logs,deny,org_admin on the organization,test_04_authorization_boundaries.py::test_denied_member_admin_on_another_tenant,direct,pass
